@@ -1,15 +1,13 @@
 <div align="center">
 
-<img src="./docs/todo.png" alt="Spotify Plugin Logo" width="256">
-
 <h2>Obsidian.md - Spotify Plugin</h2>
 
 <p>Obsidian.md Plugin to include the song you're currently listening to in your note.</p>
 
 <p align="center">
-  <a href="https://github.com/studiowebux/obsidian-spotify/issues">Report Bug</a>
+  <a href="https://github.com/studiowebux/obsidian-spotify-link/issues">Report Bug</a>
   ·
-  <a href="https://github.com/studiowebux/obsidian-spotify/issues">Request Feature</a>
+  <a href="https://github.com/studiowebux/obsidian-spotify-link/issues">Request Feature</a>
 </p>
 </div>
 
