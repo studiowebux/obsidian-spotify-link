@@ -17,32 +17,20 @@
 
 ## About
 
--   Connect your spotify account using their API
--   Using a snippet or shortcut, add the currently playing song into the cursor position
+-   **Spotify Account Integration**: Users can connect their Spotify accounts using the official Spotify API. This enables the plugin to access their **_current playing information_**.
+-   **Song Insertion Shortcut**: With a simple snippet or shortcut, users can add the currently playing song from their Spotify account into the cursor position of their document. This feature simplifies the task of connecting music and creative thoughts.
 
 ---
 
 ## Installation and Usage
 
-[Full Documentation is available here](https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-doc)
+[Full Documentation is available here](https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link-doc)
 
 ---
 
 ## Screenshots
 
-[See Screenshots here](https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify/screenshots/Demo)
-
----
-
-## Changelog
-
-### TODO
-
--   [] Write Documentation
--   [] Setup Refresh Token
--   [] Setup Auto Login
--   [x] Rewrite Actual code from our past POC
--   [x] Write the TODO...
+[See Screenshots here](https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/screenshots/Demo)
 
 ---
 
