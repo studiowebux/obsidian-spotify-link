@@ -1,20 +1,16 @@
 import { Editor, Notice, Plugin, addIcon } from "obsidian";
-import { SpotifyLinkSettings } from "./types";
-import {
-	getCurrentlyPlayingTrack,
-	getCurrentlyPlayingTrackAsString,
-	handleCallback,
-	onLogin,
-} from "./spotify-api";
-import { SpotifyAuthCallback } from "./spotify.types";
+import { SpotifyLinkSettings, SpotifyAuthCallback } from "./types";
+import { getSpotifyUrl, handleCallback } from "./api";
 import SettingsTab, { DEFAULT_SETTINGS } from "./settingsTab";
-import { handleEditor } from "./spotify-ui";
+import { handleEditor } from "./ui";
+import { onLogin, onAutoLogin } from "./events";
 
 export default class SpotifyLinkPlugin extends Plugin {
 	settings: SpotifyLinkSettings;
 
 	// States
 	spotifyConnected: boolean = false;
+	spotifyUrl: string = "";
 	statusBar: HTMLElement;
 
 	async saveSettings() {
@@ -55,7 +51,6 @@ export default class SpotifyLinkPlugin extends Plugin {
 		// STATUS BAR
 		//
 		this.statusBar = this.addStatusBarItem();
-		this.updateStatusBar();
 		this.registerInterval(
 			window.setInterval(() => this.updateStatusBar(), 30000)
 		);
@@ -77,6 +72,9 @@ export default class SpotifyLinkPlugin extends Plugin {
 						"Spotify Link Plugin: Connected to Spotify !",
 						3000
 					);
+					this.spotifyUrl = await getSpotifyUrl(
+						this.settings.spotifyClientId
+					);
 				} catch (e) {
 					new Notice(
 						"[ERROR] Spotify Link Plugin: " + e.message,
@@ -96,9 +94,23 @@ export default class SpotifyLinkPlugin extends Plugin {
 			id: "append-currently-playing-track",
 			name: "Append Spotify Playing Track with Timestamp",
 			editorCallback: async (editor: Editor) => {
-				await handleEditor(editor);
+				await handleEditor(editor, this.settings.spotifyClientId);
 			},
 		});
+
+		//
+		// Events
+		//
+		try {
+			const info = await onAutoLogin(this.settings.spotifyClientId);
+			this.spotifyConnected = info.success;
+			this.spotifyUrl = info.spotifyUrl;
+		} catch (e) {
+			new Notice(`[ERROR] Spotify Link Plugin: ${e.message}`);
+			return false;
+		} finally {
+			this.updateStatusBar();
+		}
 	}
 
 	onunload() {}
@@ -107,5 +119,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 		this.statusBar.setText(
 			`Spotify ${!this.spotifyConnected ? "not" : ""} Connected`
 		);
+		this.statusBar.onClickEvent((ev) => {
+			window.open(this.spotifyUrl);
+		});
 	}
 }

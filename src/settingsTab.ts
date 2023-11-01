@@ -24,6 +24,8 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("h2", { text: "Spotify Link Settings" });
 
+		containerEl.createEl("hr");
+
 		containerEl.createEl("h5", { text: "Spotify Integration" });
 
 		// INSTRUCTIONS
@@ -82,7 +84,9 @@ export default class SettingsTab extends PluginSettingTab {
 					});
 				text.inputEl.setAttribute("type", "password");
 			});
+
 		containerEl.createEl("hr");
+
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
 		new Setting(containerEl)
 			.setName("Spotify Scopes")
