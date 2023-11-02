@@ -86,11 +86,14 @@ export function setExpiration(expiresIn: number): void {
 }
 
 // Step 5
-export async function requestRefreshToken(clientId: string): Promise<string> {
+export async function requestRefreshToken(
+	clientId: string,
+	clientSecret: string
+): Promise<string> {
 	const refreshToken = getRefreshToken();
 	const data = {
-		clientId,
-		refreshToken,
+		client_id: clientId,
+		refresh_token: refreshToken,
 		grant_type: "refresh_token",
 	};
 	const response: RefreshTokenResponse = await fetch(
@@ -99,13 +102,14 @@ export async function requestRefreshToken(clientId: string): Promise<string> {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/x-www-form-urlencoded",
+				Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
 			},
 			body: prepareData(data),
 		}
 	).then((res) => res.json());
 
 	setAccessToken(response.access_token);
-	setRefreshToken(response.refresh_token);
+	setRefreshToken(response.refresh_token || refreshToken);
 	setExpiration(response.expires_in);
 
 	return response.access_token;
@@ -116,9 +120,10 @@ export async function requestRefreshToken(clientId: string): Promise<string> {
 ///
 
 export async function getCurrentlyPlayingTrack(
-	clientId: string
+	clientId: string,
+	clientSecret: string
 ): Promise<CurrentlyPlayingTrack> {
-	const token = await getAccessToken(clientId);
+	const token = await getAccessToken(clientId, clientSecret);
 
 	try {
 		const response: Response = await fetch(
@@ -145,14 +150,18 @@ export async function getCurrentlyPlayingTrack(
 }
 
 export async function getCurrentlyPlayingTrackAsString(
-	clientId: string
+	clientId: string,
+	clientSecret: string
 ): Promise<string> {
-	const track = await getCurrentlyPlayingTrack(clientId);
+	const track = await getCurrentlyPlayingTrack(clientId, clientSecret);
 	return processCurrentlyPlayingTrackInput(track);
 }
 
-export async function getMe(clientId: string): Promise<Me> {
-	const token = await getAccessToken(clientId);
+export async function getMe(
+	clientId: string,
+	clientSecret: string
+): Promise<Me> {
+	const token = await getAccessToken(clientId, clientSecret);
 
 	const response: Response = await fetch(`${SPOTIFY_API_BASE_ADDRESS}/me`, {
 		method: "GET",
@@ -168,8 +177,11 @@ export async function getMe(clientId: string): Promise<Me> {
 	return json as Me;
 }
 
-export async function getSpotifyUrl(clientId: string): Promise<string> {
-	const me = await getMe(clientId);
+export async function getSpotifyUrl(
+	clientId: string,
+	clientSecret: string
+): Promise<string> {
+	const me = await getMe(clientId, clientSecret);
 	return me.external_urls.spotify;
 }
 
@@ -187,13 +199,16 @@ function getExpiration(): number {
 	return parseInt(expiration);
 }
 
-async function getAccessToken(clientId: string): Promise<string> {
+async function getAccessToken(
+	clientId: string,
+	clientSecret: string
+): Promise<string> {
 	const token = window.localStorage.getItem("access_token");
 	if (!token) throw new Error("You are not connected to Spotify.");
 
 	if (new Date().getTime() <= getExpiration()) return token;
 
-	return await requestRefreshToken(clientId);
+	return await requestRefreshToken(clientId, clientSecret);
 }
 
 function getRefreshToken(): string {

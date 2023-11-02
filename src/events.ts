@@ -1,9 +1,10 @@
 import { getMe, generateLoginUrl, REDIRECT_URI } from "./api";
 
 export async function onAutoLogin(
-	clientId: string
+	clientId: string,
+	clientSecret: string
 ): Promise<{ success: boolean; spotifyUrl: string }> {
-	const profile = await getMe(clientId);
+	const profile = await getMe(clientId, clientSecret);
 	return profile
 		? { success: true, spotifyUrl: profile.external_urls.spotify }
 		: { success: false, spotifyUrl: "" };

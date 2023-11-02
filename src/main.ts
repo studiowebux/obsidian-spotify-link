@@ -1,6 +1,6 @@
 import { Editor, Notice, Plugin, addIcon } from "obsidian";
 import { SpotifyLinkSettings, SpotifyAuthCallback } from "./types";
-import { getSpotifyUrl, handleCallback } from "./api";
+import { getSpotifyUrl, handleCallback, requestRefreshToken } from "./api";
 import SettingsTab, { DEFAULT_SETTINGS } from "./settingsTab";
 import { handleEditor } from "./ui";
 import { onLogin, onAutoLogin } from "./events";
@@ -73,7 +73,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 						3000
 					);
 					this.spotifyUrl = await getSpotifyUrl(
-						this.settings.spotifyClientId
+						this.settings.spotifyClientId,
+						this.settings.spotifyClientSecret
 					);
 				} catch (e) {
 					new Notice(
@@ -92,9 +93,28 @@ export default class SpotifyLinkPlugin extends Plugin {
 		//
 		this.addCommand({
 			id: "append-currently-playing-track",
-			name: "Append Spotify Playing Track with Timestamp",
+			name: "Append Spotify Currently Playing Track with Timestamp",
 			editorCallback: async (editor: Editor) => {
-				await handleEditor(editor, this.settings.spotifyClientId);
+				await handleEditor(
+					editor,
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret
+				);
+			},
+		});
+		this.addCommand({
+			id: "refresh-session",
+			name: "Refresh Session",
+			callback: async () => {
+				try {
+					await requestRefreshToken(
+						this.settings.spotifyClientId,
+						this.settings.spotifyClientSecret
+					);
+					new Notice(`Spotify Link Plugin: Access Refreshed`);
+				} catch (e) {
+					new Notice(`[ERROR] Spotify Link Plugin: ${e.message}`);
+				}
 			},
 		});
 
@@ -102,7 +122,10 @@ export default class SpotifyLinkPlugin extends Plugin {
 		// Events
 		//
 		try {
-			const info = await onAutoLogin(this.settings.spotifyClientId);
+			const info = await onAutoLogin(
+				this.settings.spotifyClientId,
+				this.settings.spotifyClientSecret
+			);
 			this.spotifyConnected = info.success;
 			this.spotifyUrl = info.spotifyUrl;
 		} catch (e) {
