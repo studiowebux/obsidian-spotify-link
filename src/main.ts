@@ -93,7 +93,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		//
 		this.addCommand({
 			id: "append-currently-playing-track",
-			name: "Append Spotify Currently Playing Track with Timestamp",
+			name: "Append Spotify currently playing track with timestamp",
 			editorCallback: async (editor: Editor) => {
 				await handleEditor(
 					editor,
@@ -104,7 +104,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		});
 		this.addCommand({
 			id: "refresh-session",
-			name: "Refresh Session",
+			name: "Refresh session",
 			callback: async () => {
 				try {
 					await requestRefreshToken(

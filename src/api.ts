@@ -1,3 +1,4 @@
+import { RequestUrlResponse, requestUrl } from "obsidian";
 import {
 	AccessTokenResponse,
 	AuthorizationCodeResponse,
@@ -61,14 +62,15 @@ async function requestAccessToken(
 		redirect_uri: redirect_uri,
 		grant_type: "authorization_code",
 	};
-	return await fetch("https://accounts.spotify.com/api/token", {
+	return await requestUrl({
+		url: "https://accounts.spotify.com/api/token",
 		method: "POST",
 		headers: {
 			"Content-Type": "application/x-www-form-urlencoded",
 			Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
 		},
 		body: prepareData(data),
-	}).then((res) => res.json());
+	}).then((res) => res.json);
 }
 
 // Step 4
@@ -96,17 +98,15 @@ export async function requestRefreshToken(
 		refresh_token: refreshToken,
 		grant_type: "refresh_token",
 	};
-	const response: RefreshTokenResponse = await fetch(
-		"https://accounts.spotify.com/api/token",
-		{
-			method: "POST",
-			headers: {
-				"Content-Type": "application/x-www-form-urlencoded",
-				Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
-			},
-			body: prepareData(data),
-		}
-	).then((res) => res.json());
+	const response: RefreshTokenResponse = await requestUrl({
+		url: "https://accounts.spotify.com/api/token",
+		method: "POST",
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
+		},
+		body: prepareData(data),
+	}).then((res) => res.json);
 
 	setAccessToken(response.access_token);
 	setRefreshToken(response.refresh_token || refreshToken);
@@ -126,17 +126,15 @@ export async function getCurrentlyPlayingTrack(
 	const token = await getAccessToken(clientId, clientSecret);
 
 	try {
-		const response: Response = await fetch(
-			`${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing`,
-			{
-				method: "GET",
-				headers: {
-					Authorization: `Bearer ${token}`,
-				},
-			}
-		);
-		const json = await response.json();
-		if (!response.ok) {
+		const response: RequestUrlResponse = await requestUrl({
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing`,
+			method: "GET",
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+		const { json } = response;
+		if (response.status !== 200) {
 			throw new Error(json?.error?.message || response.status);
 		}
 
@@ -163,14 +161,15 @@ export async function getMe(
 ): Promise<Me> {
 	const token = await getAccessToken(clientId, clientSecret);
 
-	const response: Response = await fetch(`${SPOTIFY_API_BASE_ADDRESS}/me`, {
+	const response: RequestUrlResponse = await requestUrl({
+		url: `${SPOTIFY_API_BASE_ADDRESS}/me`,
 		method: "GET",
 		headers: {
 			Authorization: `Bearer ${token}`,
 		},
 	});
-	const json = await response.json();
-	if (!response.ok) {
+	const { json } = response;
+	if (response.status !== 200) {
 		throw new Error(json?.error?.message || response.status);
 	}
 

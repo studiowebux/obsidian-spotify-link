@@ -21,13 +21,7 @@ export default class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-
-		containerEl.createEl("h2", { text: "Spotify Link Settings" });
-
-		containerEl.createEl("hr");
-
-		containerEl.createEl("h5", { text: "Spotify Integration" });
-
+		
 		// INSTRUCTIONS
 		const div = containerEl.createDiv();
 		div.createEl("p", {
