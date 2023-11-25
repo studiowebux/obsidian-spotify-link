@@ -32,10 +32,16 @@ export default class SettingsTab extends PluginSettingTab {
 			href: "https://developer.spotify.com/dashboard/",
 			text: "Spotify Developer",
 		});
-		div.createEl("ul")
+		div.createEl("ol")
 			.createEl("li", { text: "Create an App" })
 			.createEl("li", { text: "Click Settings" })
-			.createEl("li", { text: "Copy the Client Id and Secret" });
+			.createEl("li", { text: "Copy the Client Id and Secret" })
+			.createEl("li", {
+				text: "Set the Redirect URI to : obsidian://spotify-auth/",
+			})
+			.createEl("li", {
+				text: "Select the Spotify icon located in Obsidian's left sidebar to connect.",
+			});
 		div.createEl("p", {
 			text: "NOTICE: The id and secret will be stored unencrypted on your local device. If you sync your data to a public source, the id and secret will be shown as-is.",
 		});
@@ -79,18 +85,30 @@ export default class SettingsTab extends PluginSettingTab {
 					});
 				text.inputEl.setAttribute("type", "password");
 			});
+		new Setting(containerEl)
+			.setName("Spotify Redirect URI")
+			.setDesc("Redirect URI (Read Only)")
+			.addText((text) => {
+				text.setValue("obsidian://spotify-auth/").setDisabled(true);
+			});
 
 		containerEl.createEl("hr");
 
 		containerEl.createEl("h5", { text: "Templates" });
 		const divDoc = containerEl.createDiv();
+
+		divDoc.createEl("a", {
+			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
+			text: "Custom Template Documentation",
+		});
 		divDoc.createEl("p", { text: "Available variables:" });
 		divDoc
 			.createEl("ul")
-			.createEl("li", { text: "{{ song_name }}" })
 			.createEl("li", { text: "{{ album }}" })
 			.createEl("li", { text: "{{ album_release }}" })
-			.createEl("li", { text: "{{ artists }}" });
+			.createEl("li", { text: "{{ artists }}" })
+			.createEl("li", { text: "{{ song_name }}" })
+			.createEl("li", { text: "{{ timestamp }}" });
 		new Setting(containerEl)
 			.setName("Template")
 			.setDesc(
@@ -125,5 +143,12 @@ export default class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		containerEl.createEl("hr");
+
+		containerEl.createEl("a", {
+			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link",
+			text: "Official Plugin Documentation",
+		});
 	}
 }

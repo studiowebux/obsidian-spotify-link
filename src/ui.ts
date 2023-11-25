@@ -34,7 +34,7 @@ export async function handleTemplateEditor(
 	try {
 		const track = await getCurrentlyPlayingTrack(clientId, clientSecret);
 		editor.replaceSelection(
-			`> ${processCurrentlyPlayingTrack(track, template)}\n\n`
+			`${processCurrentlyPlayingTrack(track, template)}\n\n`
 		);
 	} catch (e) {
 		new Notice(e.message);
