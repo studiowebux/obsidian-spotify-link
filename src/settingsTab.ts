@@ -7,6 +7,7 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 	spotifyClientSecret: "",
 	spotifyScopes: "user-read-currently-playing",
 	spotifyState: "it-can-be-anything",
+	templates: [],
 };
 
 export default class SettingsTab extends PluginSettingTab {
@@ -21,7 +22,7 @@ export default class SettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		containerEl.empty();
-		
+
 		// INSTRUCTIONS
 		const div = containerEl.createDiv();
 		div.createEl("p", {
@@ -78,6 +79,34 @@ export default class SettingsTab extends PluginSettingTab {
 					});
 				text.inputEl.setAttribute("type", "password");
 			});
+
+		containerEl.createEl("hr");
+
+		containerEl.createEl("h5", { text: "Templates" });
+		const divDoc = containerEl.createDiv();
+		divDoc.createEl("p", { text: "Available variables:" });
+		divDoc
+			.createEl("ul")
+			.createEl("li", { text: "{{ song_name }}" })
+			.createEl("li", { text: "{{ album }}" })
+			.createEl("li", { text: "{{ album_release }}" })
+			.createEl("li", { text: "{{ artists }}" });
+		new Setting(containerEl)
+			.setName("Template")
+			.setDesc(
+				"Define a custom template to print the currently playing song"
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"Example: '{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n{{ timestamp }}"
+					)
+					.setValue(this.plugin.settings.templates[0])
+					.onChange(async (value) => {
+						this.plugin.settings.templates[0] = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		containerEl.createEl("hr");
 

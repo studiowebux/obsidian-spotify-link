@@ -7,7 +7,8 @@ import {
 	RefreshTokenResponse,
 	SpotifyAuthCallback,
 } from "./types";
-import { prepareData, processCurrentlyPlayingTrackInput } from "./utils";
+import { prepareData } from "./utils";
+import { processCurrentlyPlayingTrackInput } from "./output";
 
 export const SPOTIFY_API_BASE_ADDRESS = "https://api.spotify.com/v1";
 export const REDIRECT_URI = "obsidian://spotify-auth/";
