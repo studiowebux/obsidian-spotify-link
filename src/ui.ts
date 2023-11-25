@@ -1,5 +1,9 @@
 import { Editor, Notice } from "obsidian";
-import { getCurrentlyPlayingTrackAsString } from "./api";
+import {
+	getCurrentlyPlayingTrack,
+	getCurrentlyPlayingTrackAsString,
+} from "./api";
+import { processCurrentlyPlayingTrack } from "./output";
 
 export async function handleEditor(
 	editor: Editor,
@@ -16,7 +20,22 @@ export async function handleEditor(
 				`\n> ${new Date().toDateString()} - ${new Date().toLocaleTimeString()}` +
 				`\n\n`
 		);
-		editor.setCursor(editor.getCursor().line - 3);
+	} catch (e) {
+		new Notice(e.message);
+	}
+}
+
+export async function handleTemplateEditor(
+	editor: Editor,
+	template: string,
+	clientId: string,
+	clientSecret: string
+) {
+	try {
+		const track = await getCurrentlyPlayingTrack(clientId, clientSecret);
+		editor.replaceSelection(
+			`${processCurrentlyPlayingTrack(track, template)}\n\n`
+		);
 	} catch (e) {
 		new Notice(e.message);
 	}

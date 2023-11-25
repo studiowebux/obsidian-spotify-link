@@ -6,6 +6,7 @@ export type SpotifyLinkSettings = {
 	spotifyClientSecret: string;
 	spotifyScopes: string;
 	spotifyState: string;
+	templates: string[];
 };
 
 //
@@ -113,7 +114,7 @@ export type CurrentlyPlayingTrack = {
 		href: string;
 		id: string;
 		is_playable: boolean;
-		linked_from: {};
+		linked_from: object;
 		restrictions: {
 			reason: string;
 		};
