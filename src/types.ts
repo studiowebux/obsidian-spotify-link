@@ -46,13 +46,11 @@ export type CurrentlyPlayingTrack = {
 			};
 			href: string;
 			id: string;
-			images: [
-				{
-					url: string;
-					height: number;
-					width: number;
-				}
-			];
+			images: {
+				url: string;
+				height: number;
+				width: number;
+			}[];
 			name: string;
 			release_date: string;
 			release_date_precision: string;
