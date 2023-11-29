@@ -53,6 +53,18 @@ export function processCurrentlyPlayingTrack(
 				`![${data.item.album.name}](${data.item.album.images[2]?.url})`
 			)
 			.replace(
+				/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
+				data.item.album.images[0].url
+			)
+			.replace(
+				/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
+				data.item.album.images[1]?.url
+			)
+			.replace(
+				/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
+				data.item.album.images[2]?.url
+			)
+			.replace(
 				/{{ album_link }}|{{album_link}}/g,
 				data.item.album.external_urls.spotify
 			)
