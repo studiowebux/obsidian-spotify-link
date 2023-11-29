@@ -106,9 +106,15 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("ul")
 			.createEl("li", { text: "{{ album }}" })
 			.createEl("li", { text: "{{ album_release }}" })
+			.createEl("li", { text: "{{ album_cover_large }}" })
+			.createEl("li", { text: "{{ album_cover_medium }}" })
+			.createEl("li", { text: "{{ album_cover_small }}" })
+			.createEl("li", { text: "{{ album_link }}" })
 			.createEl("li", { text: "{{ artists }}" })
 			.createEl("li", { text: "{{ song_name }}" })
+			.createEl("li", { text: "{{ song_link }}" })
 			.createEl("li", { text: "{{ timestamp }}" });
+
 		new Setting(containerEl)
 			.setName("Template")
 			.setDesc(
