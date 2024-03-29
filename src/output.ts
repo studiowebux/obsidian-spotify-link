@@ -6,14 +6,24 @@ export function processCurrentlyPlayingTrackInput(
 ): string {
 	let message = "";
 	if (data && data.is_playing) {
-		message = `['**${data.item.name}**' by ***${data.item.artists
-			.map((a) => a.name)
-			.join(", ")}*** **${millisToMinutesAndSeconds(
-			data.progress_ms
-		)}** (${(
-			(data.progress_ms / parseInt(data.item.duration_ms)) *
+		if (!data.item || !data.item.name || !data.item.artists) {
+			console.error("processCurrentlyPlayingTrackInput", data);
+			// This should never have happened
+			return `Feel free to submit this issue on Github Issues. Simply copy the provided content below: ${JSON.stringify(
+				data
+			)}`;
+		}
+		const song_name = data.item?.name || "Error: Song name unavailable";
+		const artists = data.item?.artists || [];
+		const progress = data.progress_ms;
+		const duration = parseInt(data.item.duration_ms);
+		const url = data.item.external_urls.spotify;
+		message = `['**${song_name}**' by ***${artists
+			.map((a) => a?.name || "Unknown")
+			.join(", ")}*** **${millisToMinutesAndSeconds(progress)}** (${(
+			(progress / duration) *
 			100
-		).toFixed(0)}%)](${data.item.external_urls.spotify})`;
+		).toFixed(0)}%)](${url})`;
 	} else {
 		message = "No song is playing.";
 	}
@@ -26,6 +36,13 @@ export function processCurrentlyPlayingTrack(
 ): string {
 	let message = "";
 	if (data && data.is_playing) {
+		if (!data.item || !data.item.name || !data.item.artists) {
+			console.error("processCurrentlyPlayingTrack", data);
+			// This should never have happened
+			return `Feel free to submit this issue on Github Issues. Simply copy the provided content below: ${JSON.stringify(
+				data
+			)}`;
+		}
 		message = template
 			.replace(/{{ song_name }}|{{song_name}}/g, data.item.name)
 			.replace(
