@@ -132,9 +132,9 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ timestamp }}" });
 
 		new Setting(containerEl)
-			.setName("Template")
+			.setName("Template for song")
 			.setDesc(
-				"Define a custom template to print the currently playing song"
+				"Define a custom template to print the currently playing song (Song only)"
 			)
 			.addTextArea((text) =>
 				text
@@ -144,6 +144,22 @@ export default class SettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.templates[0])
 					.onChange(async (value) => {
 						this.plugin.settings.templates[0] = value;
+						await this.plugin.saveSettings();
+					})
+			);
+		new Setting(containerEl)
+			.setName("Template for podcast")
+			.setDesc(
+				"Define a custom template to print the currently playing episode (Podcast only)"
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"Example: '{{ podcast_name }}': {{ description }} released {{ release_date }}\n{{ timestamp }}"
+					)
+					.setValue(this.plugin.settings.templates[1])
+					.onChange(async (value) => {
+						this.plugin.settings.templates[1] = value;
 						await this.plugin.saveSettings();
 					})
 			);
