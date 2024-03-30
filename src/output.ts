@@ -10,7 +10,6 @@ export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack
 ): string {
 	if (data && data.is_playing) {
-		console.debug(data, getTrackType(data));
 		if (getTrackType(data) === "track") {
 			return getTrackMessageTimestamp(data);
 		}
