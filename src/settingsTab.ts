@@ -1,14 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import { SpotifyLinkSettings } from "./types";
 import SpotifyLinkPlugin from "./main";
-
-export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
-	spotifyClientId: "",
-	spotifyClientSecret: "",
-	spotifyScopes: "user-read-currently-playing",
-	spotifyState: "it-can-be-anything",
-	templates: [],
-};
 
 export default class SettingsTab extends PluginSettingTab {
 	plugin: SpotifyLinkPlugin;
@@ -101,7 +92,7 @@ export default class SettingsTab extends PluginSettingTab {
 			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
 			text: "Custom Template Documentation",
 		});
-		divDoc.createEl("p", { text: "Available variables:" });
+		divDoc.createEl("p", { text: "Available variables (song):" });
 		divDoc
 			.createEl("ul")
 			.createEl("li", { text: "{{ album }}" })
@@ -118,10 +109,32 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ song_link }}" })
 			.createEl("li", { text: "{{ timestamp }}" });
 
+		divDoc.createEl("p", { text: "Available variables (podcast):" });
+		divDoc
+			.createEl("ul")
+			.createEl("li", { text: "{{ episode_name }}" })
+			.createEl("li", { text: "{{ episode_link }}" })
+			.createEl("li", { text: "{{ description }}" })
+			.createEl("li", { text: "{{ duration_ms }}" })
+			.createEl("li", { text: "{{ audio_preview_url }}" })
+			.createEl("li", { text: "{{ episode_cover_large }}" })
+			.createEl("li", { text: "{{ episode_cover_medium }}" })
+			.createEl("li", { text: "{{ episode_cover_small }}" })
+			.createEl("li", { text: "{{ episode_cover_link_large }}" })
+			.createEl("li", { text: "{{ episode_cover_link_medium }}" })
+			.createEl("li", { text: "{{ episode_cover_link_small }}" })
+			.createEl("li", { text: "{{ release_date }}" })
+			.createEl("li", { text: "{{ show_name }}" })
+			.createEl("li", { text: "{{ publisher }}" })
+			.createEl("li", { text: "{{ show_description }}" })
+			.createEl("li", { text: "{{ show_link }}" })
+			.createEl("li", { text: "{{ total_episodes }}" })
+			.createEl("li", { text: "{{ timestamp }}" });
+
 		new Setting(containerEl)
-			.setName("Template")
+			.setName("Template for song")
 			.setDesc(
-				"Define a custom template to print the currently playing song"
+				"Define a custom template to print the currently playing song (Song only)"
 			)
 			.addTextArea((text) =>
 				text
@@ -131,6 +144,22 @@ export default class SettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.templates[0])
 					.onChange(async (value) => {
 						this.plugin.settings.templates[0] = value;
+						await this.plugin.saveSettings();
+					})
+			);
+		new Setting(containerEl)
+			.setName("Template for podcast")
+			.setDesc(
+				"Define a custom template to print the currently playing episode (Podcast only)"
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"Example: '{{ podcast_name }}': {{ description }} released {{ release_date }}\n{{ timestamp }}"
+					)
+					.setValue(this.plugin.settings.templates[1])
+					.onChange(async (value) => {
+						this.plugin.settings.templates[1] = value;
 						await this.plugin.saveSettings();
 					})
 			);

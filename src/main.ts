@@ -1,9 +1,10 @@
 import { Editor, Notice, Plugin, addIcon } from "obsidian";
 import { SpotifyLinkSettings, SpotifyAuthCallback } from "./types";
 import { getSpotifyUrl, handleCallback, requestRefreshToken } from "./api";
-import SettingsTab, { DEFAULT_SETTINGS } from "./settingsTab";
+import SettingsTab from "./settingsTab";
 import { handleEditor, handleTemplateEditor } from "./ui";
 import { onLogin, onAutoLogin } from "./events";
+import { DEFAULT_SETTINGS } from "./default";
 
 export default class SpotifyLinkPlugin extends Plugin {
 	settings: SpotifyLinkSettings;
@@ -92,6 +93,36 @@ export default class SpotifyLinkPlugin extends Plugin {
 		// USER INTERACTION
 		//
 
+		//
+		// Episode focused
+		//
+
+		this.addCommand({
+			id: "append-currently-playing-episode-using-template",
+			name: "Append Spotify currently playing episode using template",
+			editorCallback: async (editor: Editor) => {
+				await handleTemplateEditor(
+					editor,
+					this.settings.templates[1],
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret
+				);
+			},
+		});
+		this.addCommand({
+			id: "append-currently-playing-episode",
+			name: "Append Spotify currently playing episode with timestamp",
+			editorCallback: async (editor: Editor) => {
+				await handleEditor(
+					editor,
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret
+				);
+			},
+		});
+		//
+		// Song focused
+		//
 		this.addCommand({
 			id: "append-currently-playing-track-using-template",
 			name: "Append Spotify currently playing track using template",
