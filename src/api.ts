@@ -128,7 +128,7 @@ export async function getCurrentlyPlayingTrack(
 
 	try {
 		const response: RequestUrlResponse = await requestUrl({
-			url: `${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing`,
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing?additional_types=track,episode`,
 			method: "GET",
 			headers: {
 				Authorization: `Bearer ${token}`,
