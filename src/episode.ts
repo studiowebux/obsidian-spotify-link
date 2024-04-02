@@ -1,5 +1,5 @@
 import { CurrentlyPlayingTrack, Episode } from "./types";
-import { millisToMinutesAndSeconds } from "./utils";
+import { millisToMinutesAndSeconds, millisToSeconds } from "./utils";
 
 export function isEpisode(data: CurrentlyPlayingTrack) {
 	return data.item.type === "episode";
@@ -26,6 +26,9 @@ export function getEpisodeMessage(
 ) {
 	if (!isEpisode(data)) throw new Error("Not an episode.");
 	const episode = data.item as Episode;
+	const progressInMilliseconds = data.progress_ms.toFixed(0);
+	const progressInSeconds = millisToSeconds(data.progress_ms);
+	const progressInMinutesAndSeconds = millisToMinutesAndSeconds(data.progress_ms);
 
 	return template
 		.replace(/{{ episode_name }}|{{episode_name}}/g, episode.name)
@@ -80,6 +83,18 @@ export function getEpisodeMessage(
 		.replace(
 			/{{ total_episodes }}|{{total_episodes}}/g,
 			episode.show.total_episodes.toString()
+		)
+		.replace(
+			/{{ progress_ms }}|{{progress_ms}}/g,
+			progressInMilliseconds
+		)
+		.replace(
+			/{{ progress_sec }}|{{progress_sec}}/g,
+			progressInSeconds
+		)
+		.replace(
+			/{{ progress_min_sec }}|{{progress_min_sec}}/g,
+			progressInMinutesAndSeconds
 		)
 		.replace(
 			/{{ timestamp }}|{{timestamp}}/g,

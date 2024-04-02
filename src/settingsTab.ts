@@ -129,6 +129,9 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ show_description }}" })
 			.createEl("li", { text: "{{ show_link }}" })
 			.createEl("li", { text: "{{ total_episodes }}" })
+			.createEl("li", { text: "{{ progress_ms }}" })
+			.createEl("li", { text: "{{ progress_sec }}" })
+			.createEl("li", { text: "{{ progress_min_sec }}" })
 			.createEl("li", { text: "{{ timestamp }}" });
 
 		new Setting(containerEl)
