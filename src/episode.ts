@@ -28,7 +28,9 @@ export function getEpisodeMessage(
 	const episode = data.item as Episode;
 	const progressInMilliseconds = data.progress_ms.toFixed(0);
 	const progressInSeconds = millisToSeconds(data.progress_ms);
-	const progressInMinutesAndSeconds = millisToMinutesAndSeconds(data.progress_ms);
+	const progressInMinutesAndSeconds = millisToMinutesAndSeconds(
+		data.progress_ms
+	);
 
 	return template
 		.replace(/{{ episode_name }}|{{episode_name}}/g, episode.name)
@@ -36,7 +38,16 @@ export function getEpisodeMessage(
 			/{{ episode_link }}|{{episode_link}}/g,
 			episode.external_urls.spotify
 		)
-		.replace(/{{ description }}|{{description}}/g, episode.description)
+		.replace(
+			/{{ description }}|{{description}}|{{ description\[(\d+)\] }}|{{description\[(\d+)\]}}/g,
+			(_, len) => {
+				let parsed_len = episode.description.length;
+				if (parseInt(len) > episode.description.length || isNaN(len))
+					parsed_len = episode.description.length;
+
+				return episode.description.slice(0, parsed_len);
+			}
+		)
 		.replace(
 			/{{ duration_ms }}|{{duration_ms}}/g,
 			episode.duration_ms.toString()
@@ -84,14 +95,8 @@ export function getEpisodeMessage(
 			/{{ total_episodes }}|{{total_episodes}}/g,
 			episode.show.total_episodes.toString()
 		)
-		.replace(
-			/{{ progress_ms }}|{{progress_ms}}/g,
-			progressInMilliseconds
-		)
-		.replace(
-			/{{ progress_sec }}|{{progress_sec}}/g,
-			progressInSeconds
-		)
+		.replace(/{{ progress_ms }}|{{progress_ms}}/g, progressInMilliseconds)
+		.replace(/{{ progress_sec }}|{{progress_sec}}/g, progressInSeconds)
 		.replace(
 			/{{ progress_min_sec }}|{{progress_min_sec}}/g,
 			progressInMinutesAndSeconds
