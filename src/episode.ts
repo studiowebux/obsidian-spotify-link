@@ -41,11 +41,13 @@ export function getEpisodeMessage(
 		.replace(
 			/{{ description }}|{{description}}|{{ description\[(\d+)\] }}|{{description\[(\d+)\]}}/g,
 			(_, len) => {
-				let parsed_len = episode.description.length;
+				let parsed_len = len;
 				if (parseInt(len) > episode.description.length || isNaN(len))
 					parsed_len = episode.description.length;
 
-				return episode.description.slice(0, parsed_len);
+				return `${episode.description.slice(0, parsed_len)}${
+					episode.description.length != parsed_len ? "..." : ""
+				}`;
 			}
 		)
 		.replace(
