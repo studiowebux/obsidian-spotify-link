@@ -17,4 +17,6 @@ export function millisToMinutesAndSeconds(millis: number) {
 	return minutes + "m:" + (seconds < 10 ? "0" : "") + seconds + "s";
 }
 
-
+export function millisToSeconds(millis: number) {
+	return (millis / 1000).toFixed(0);
+}
