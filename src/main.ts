@@ -186,8 +186,5 @@ export default class SpotifyLinkPlugin extends Plugin {
 		this.statusBar.setText(
 			`Spotify ${!this.spotifyConnected ? "not" : ""} Connected`
 		);
-		this.statusBar.onClickEvent((ev) => {
-			window.open(this.spotifyUrl);
-		});
 	}
 }
