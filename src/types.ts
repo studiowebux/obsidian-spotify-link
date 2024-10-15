@@ -7,7 +7,7 @@ export type SpotifyLinkSettings = {
   spotifyScopes: string;
   spotifyState: string;
   templates: string[];
-  menu: Array<Record<{ name: string; enabled: boolean }>>;
+  menu: Array<{ name: string; enabled: boolean; id: string }>;
   defaultDestination: string;
   overwrite: boolean;
 };
