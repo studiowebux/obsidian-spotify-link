@@ -170,6 +170,27 @@ export default class SettingsTab extends PluginSettingTab {
             await this.plugin.saveSettings();
           }),
       );
+    new Setting(containerEl)
+      .setName("Default destination")
+      .setDesc(
+        "Destination to store track or episode when using the command palette, default at the root of your vault",
+      )
+      .addText((text) =>
+        text
+          .setValue(this.plugin.settings.defaultDestination)
+          .onChange(async (value) => {
+            this.plugin.settings.defaultDestination = value;
+            await this.plugin.saveSettings();
+          }),
+      );
+
+    new Setting(containerEl).setName("Allow overwrite").addToggle((toggle) => {
+      toggle.setValue(this.plugin.settings.overwrite);
+      toggle.onChange(async (value: boolean) => {
+        this.plugin.settings.overwrite = value;
+        await this.plugin.saveSettings();
+      });
+    });
 
     containerEl.createEl("hr");
 

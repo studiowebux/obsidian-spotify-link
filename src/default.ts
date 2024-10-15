@@ -31,4 +31,6 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
       id: "create-file-for-currently-playing-track",
     },
   ],
+  defaultDestination: "",
+  overwrite: false,
 };

@@ -8,6 +8,8 @@ export type SpotifyLinkSettings = {
   spotifyState: string;
   templates: string[];
   menu: Array<Record<{ name: string; enabled: boolean }>>;
+  defaultDestination: string;
+  overwrite: boolean;
 };
 
 //

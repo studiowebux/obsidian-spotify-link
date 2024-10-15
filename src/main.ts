@@ -74,12 +74,23 @@ export default class SpotifyLinkPlugin extends Plugin {
     ).replace(/[:|.]/g, "_")}.md`;
     const exists = await this.app.vault.adapter.exists(filename, true);
 
-    if (exists) {
-      new Notice(
-        "A file with this name already exists and will be overwritten.",
-      );
+    try {
+      await this.app.vault.create(filename, content);
+    } catch (e) {
+      if (this.settings.overwrite === true) {
+        try {
+          await this.app.vault.modify(
+            this.app.vault.getFileByPath(filename),
+            content,
+          );
+          if (exists) {
+            new Notice("Spotify Link Plugin: track or episode overwritten.");
+          }
+        } catch (e) {
+          new Notice("[ERROR] Spotify Link Plugin: " + e.message, 3000);
+        }
+      }
     }
-    await this.app.vault.create(filename, content);
   }
 
   async onload() {
@@ -209,6 +220,47 @@ export default class SpotifyLinkPlugin extends Plugin {
         } catch (e) {
           new Notice(`[ERROR] Spotify Link Plugin: ${e.message}`);
         }
+      },
+    });
+
+    this.addCommand({
+      id: "create-file-for-currently-playing-episode-using-template",
+      name: "Create file for currently playing episode using template",
+      callback: async () => {
+        await this.createFile(
+          this.settings.defaultDestination ?? "",
+          "create-file-for-currently-playing-episode-using-template",
+        );
+      },
+    });
+    this.addCommand({
+      id: "create-file-for-currently-playing-episode",
+      name: "Create file for currently playing episode",
+      callback: async () => {
+        await this.createFile(
+          this.settings.defaultDestination ?? "",
+          "create-file-for-currently-playing-episode",
+        );
+      },
+    });
+    this.addCommand({
+      id: "create-file-for-currently-playing-track-using-template",
+      name: "Create file for currently playing track using template",
+      callback: async () => {
+        await this.createFile(
+          this.settings.defaultDestination ?? "",
+          "create-file-for-currently-playing-track-using-template",
+        );
+      },
+    });
+    this.addCommand({
+      id: "create-file-for-currently-playing-track",
+      name: "Create file for currently playing track",
+      callback: async () => {
+        await this.createFile(
+          this.settings.defaultDestination ?? "",
+          "create-file-for-currently-playing-track",
+        );
       },
     });
 
