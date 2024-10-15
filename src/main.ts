@@ -75,7 +75,9 @@ export default class SpotifyLinkPlugin extends Plugin {
     const exists = await this.app.vault.adapter.exists(filename, true);
 
     if (exists) {
-      new Notice("File already exist and being override.");
+      new Notice(
+        "A file with this name already exists and will be overwritten.",
+      );
     }
     await this.app.vault.create(filename, content);
   }
@@ -230,6 +232,8 @@ export default class SpotifyLinkPlugin extends Plugin {
         };
         this.registerEvent(this.app.workspace.on("file-menu", menuCreateFile));
       }
+    } else {
+      new Notice("Your spotify link configuration might be outdated.");
     }
 
     //
