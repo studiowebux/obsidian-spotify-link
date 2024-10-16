@@ -10,6 +10,7 @@ export type SpotifyLinkSettings = {
   menu: Array<{ name: string; enabled: boolean; id: string }>;
   defaultDestination: string;
   overwrite: boolean;
+  autoOpen: boolean;
 };
 
 //

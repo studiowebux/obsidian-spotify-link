@@ -5,6 +5,7 @@ import {
   Notice,
   Plugin,
   TFile,
+  type Vault,
   addIcon,
   normalizePath,
 } from "obsidian";
@@ -23,6 +24,7 @@ import {
   getCurrentlyPlayingTrackAsString,
 } from "./api";
 import { processCurrentlyPlayingTrack } from "./output";
+import { isPath } from "./utils";
 
 export default class SpotifyLinkPlugin extends Plugin {
   settings: SpotifyLinkSettings;
@@ -32,13 +34,35 @@ export default class SpotifyLinkPlugin extends Plugin {
   spotifyUrl = "";
   statusBar: HTMLElement;
 
-  async loadOrGetTemplate(input: string) {
-    if (!input) return "";
-    const exists = await this.app.vault.adapter.exists(input, true);
-    if (exists) {
-      return this.app.vault.adapter.read(input);
+  async loadOrGetTemplate(input: string): Promise<string> {
+    try {
+      if (!input) return "";
+      const exists = await this.app.vault.adapter.exists(input, true);
+      if (exists) {
+        return this.app.vault.adapter.read(input);
+      } else {
+        // Retry adding the .md file extension automatically.
+        const exists_with_md = await this.app.vault.adapter.exists(
+          input + ".md",
+          true,
+        );
+        if (exists_with_md) {
+          return this.app.vault.adapter.read(input + ".md");
+        }
+      }
+
+      if (isPath(input)) {
+        new Notice(
+          "[WARN] Spotify Link Plugin: The provided template looks like a path, if so, the file hasn't been found.",
+          10000,
+        );
+      }
+
+      return input; // This is the inline template.
+    } catch (e) {
+      new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+      return "";
     }
-    return input; // This is the inline template.
   }
 
   async saveSettings() {
@@ -47,6 +71,44 @@ export default class SpotifyLinkPlugin extends Plugin {
 
   async loadSettings() {
     this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async autoOpen(filename: string) {
+    if (this.settings.autoOpen === true) {
+      try {
+        await this.app.workspace
+          .getLeaf()
+          .openFile(this.app.vault.getAbstractFileByPath(filename) as TFile);
+      } catch (e) {
+        new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+      }
+    }
+  }
+
+  async createFolder(vault: Vault, folder: string) {
+    try {
+      await vault.createFolder(folder);
+    } catch (e) {
+      if (e.message !== "Folder already exists.") {
+        new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+      }
+    }
+  }
+
+  async overwrite(filename: string, content: string, exists: boolean) {
+    if (this.settings.overwrite === true) {
+      try {
+        await this.app.vault.modify(
+          this.app.vault.getAbstractFileByPath(filename) as TFile,
+          content,
+        );
+        if (exists) {
+          new Notice("Spotify Link Plugin: track or episode overwritten.");
+        }
+      } catch (e) {
+        new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+      }
+    }
   }
 
   async createFile(parent: string, id: string) {
@@ -85,24 +147,19 @@ export default class SpotifyLinkPlugin extends Plugin {
     const filename = `${normalizePath(
       `/${parent}/${(track as CurrentlyPlayingTrack)?.item?.name ?? new Date().toISOString()}`,
     ).replace(/[:|.]/g, "_")}.md`;
-    const exists = await this.app.vault.adapter.exists(filename, true);
 
+    const exists = await this.app.vault.adapter.exists(filename, true);
+    const folder = filename.substring(0, filename.lastIndexOf("/"));
     try {
+      await this.createFolder(this.app.vault, folder);
       await this.app.vault.create(filename, content);
+      await this.autoOpen(filename);
     } catch (e) {
-      if (this.settings.overwrite === true) {
-        try {
-          await this.app.vault.modify(
-            this.app.vault.getAbstractFileByPath(filename) as TFile,
-            content,
-          );
-          if (exists) {
-            new Notice("Spotify Link Plugin: track or episode overwritten.");
-          }
-        } catch (e) {
-          new Notice("[ERROR] Spotify Link Plugin: " + e.message, 3000);
-        }
-      }
+      await this.overwrite(filename, content, exists);
+      // Auto open the file even if there is an error.
+      // Probably an already exists as the others should be handle correctly.
+      await this.autoOpen(filename);
+      new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
     }
   }
 

@@ -138,6 +138,19 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ progress_min_sec }}" })
       .createEl("li", { text: "{{ timestamp }}" });
 
+    divDoc.createEl("p", { text: "Template Selection:" });
+    divDoc.createEl("p", {
+      text: "You have two options to specify a template: 'Inline' or 'Path-based'.",
+    });
+    divDoc
+      .createEl("ul")
+      .createEl("li", {
+        text: "To use the inline method, simply include your template directly.",
+      })
+      .createEl("li", {
+        text: "For path-based selection, you must reference the Vault. A valid example would be: 'Templates/Spotify/track.md' and the content structure is exactly the same as the inline template.",
+      });
+
     new Setting(containerEl)
       .setName("Template for song")
       .setDesc(
@@ -184,13 +197,27 @@ export default class SettingsTab extends PluginSettingTab {
           }),
       );
 
-    new Setting(containerEl).setName("Allow overwrite").addToggle((toggle) => {
-      toggle.setValue(this.plugin.settings.overwrite);
-      toggle.onChange(async (value: boolean) => {
-        this.plugin.settings.overwrite = value;
-        await this.plugin.saveSettings();
+    new Setting(containerEl)
+      .setName("Allow overwrite")
+      .setDesc("Overwrite the file if it already exists in the vault.")
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.overwrite);
+        toggle.onChange(async (value: boolean) => {
+          this.plugin.settings.overwrite = value;
+          await this.plugin.saveSettings();
+        });
       });
-    });
+
+    new Setting(containerEl)
+      .setName("Auto Open")
+      .setDesc("Automatically open the newly created file in the active leaf.")
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.settings.autoOpen);
+        toggle.onChange(async (value: boolean) => {
+          this.plugin.settings.autoOpen = value;
+          await this.plugin.saveSettings();
+        });
+      });
 
     containerEl.createEl("hr");
 
