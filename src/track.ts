@@ -68,5 +68,14 @@ export function getTrackMessage(data: CurrentlyPlayingTrack, template: string) {
     .replace(
       /{{ timestamp }}|{{timestamp}}/g,
       `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`,
-    );
+    )
+    .replace(
+      /{{ timestampz\(HH:mm\) }}|{{timestampz\(HH:mm\)}}/g,
+      `${new Date().getUTCHours()}:${new Date().getUTCMinutes()}`,
+    )
+    .replace(
+      /{{ timestamp\(HH:mm\) }}|{{timestamp\(HH:mm\)}}/g,
+      `${new Date().getHours()}:${new Date().getMinutes()}`,
+    )
+    .replace(/{{ timestampz }}|{{timestampz}}/g, `${new Date().toISOString()}`);
 }
