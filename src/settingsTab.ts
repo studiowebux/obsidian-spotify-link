@@ -114,7 +114,11 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ timestamp }}" })
       .createEl("li", { text: "{{ genres }}" })
       .createEl("li", { text: "{{ genres_array }}" })
-      .createEl("li", { text: "{{ genres_hashtag }}" });
+      .createEl("li", { text: "{{ genres_hashtag }}" })
+      .createEl("li", { text: "{{ followers }}" })
+      .createEl("li", { text: "{{ artist_image }}" })
+      .createEl("li", { text: "{{ popularity }}" })
+      .createEl("li", { text: "{{ artist_names }}" });
 
     divDoc.createEl("p", { text: "Available variables (podcast):" });
     divDoc

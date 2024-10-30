@@ -98,5 +98,31 @@ export function getTrackMessage(
       )
         .flat(Infinity)
         .join(" "),
+    )
+    .replace(
+      /{{ followers }}|{{followers}}/g,
+      artists.length > 1
+        ? artists
+            ?.map((artist) => `${artist.name}: ${artist.followers.total}`)
+            .join(", ")
+        : artists[0].followers.total.toString(),
+    )
+    .replace(
+      /{{ popularity }}|{{popularity}}/g,
+      artists.length > 1
+        ? artists
+            ?.map((artist) => `${artist.name}: ${artist.popularity}`)
+            .join(", ")
+        : artists[0].popularity.toString(),
+    )
+    .replace(
+      /{{ artist_image }}|{{artist_image}}/g,
+      artists
+        ?.map((artist) => `![${artist.name}](${artist.images[0].url})`)
+        .join(", "),
+    )
+    .replace(
+      /{{ artist_name }}|{{artist_name}}/g,
+      artists?.map((artist) => artist.name).join(", "),
     );
 }
