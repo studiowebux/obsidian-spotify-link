@@ -143,10 +143,7 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ progress_ms }}" })
       .createEl("li", { text: "{{ progress_sec }}" })
       .createEl("li", { text: "{{ progress_min_sec }}" })
-      .createEl("li", { text: "{{ timestamp }}" })
-      .createEl("li", { text: "{{ genres }}" })
-      .createEl("li", { text: "{{ genres_array }}" })
-      .createEl("li", { text: "{{ genres_hashtag }}" });
+      .createEl("li", { text: "{{ timestamp }}" });
 
     divDoc.createEl("p", { text: "Template Selection:" });
     divDoc.createEl("p", {
