@@ -111,7 +111,10 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ artists }}" })
       .createEl("li", { text: "{{ song_name }}" })
       .createEl("li", { text: "{{ song_link }}" })
-      .createEl("li", { text: "{{ timestamp }}" });
+      .createEl("li", { text: "{{ timestamp }}" })
+      .createEl("li", { text: "{{ genres }}" })
+      .createEl("li", { text: "{{ genres_array }}" })
+      .createEl("li", { text: "{{ genres_hashtag }}" });
 
     divDoc.createEl("p", { text: "Available variables (podcast):" });
     divDoc
@@ -136,7 +139,10 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ progress_ms }}" })
       .createEl("li", { text: "{{ progress_sec }}" })
       .createEl("li", { text: "{{ progress_min_sec }}" })
-      .createEl("li", { text: "{{ timestamp }}" });
+      .createEl("li", { text: "{{ timestamp }}" })
+      .createEl("li", { text: "{{ genres }}" })
+      .createEl("li", { text: "{{ genres_array }}" })
+      .createEl("li", { text: "{{ genres_hashtag }}" });
 
     divDoc.createEl("p", { text: "Template Selection:" });
     divDoc.createEl("p", {

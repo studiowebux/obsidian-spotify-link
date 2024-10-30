@@ -1,6 +1,7 @@
 import { RequestUrlResponse, requestUrl } from "obsidian";
 import {
   AccessTokenResponse,
+  Artist,
   AuthorizationCodeResponse,
   CurrentlyPlayingTrack,
   Me,
@@ -175,6 +176,33 @@ export async function getMe(
   }
 
   return json as Me;
+}
+
+export async function getArtist(
+  clientId: string,
+  clientSecret: string,
+  artistId: string,
+): Promise<Artist> {
+  const token = await getAccessToken(clientId, clientSecret);
+
+  try {
+    const response: RequestUrlResponse = await requestUrl({
+      url: `${SPOTIFY_API_BASE_ADDRESS}/artists/${artistId}`,
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const { json } = response;
+    if (response.status !== 200) {
+      throw new Error(json?.error?.message || response.status);
+    }
+    const artist: Artist | null = json;
+    if (!artist) throw new Error("Unable to get the artist.");
+    return artist;
+  } catch (e) {
+    throw new Error("Unable to get the artist.");
+  }
 }
 
 export async function getSpotifyUrl(

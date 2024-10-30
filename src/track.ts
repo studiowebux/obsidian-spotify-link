@@ -1,4 +1,4 @@
-import { CurrentlyPlayingTrack, Track, TrackType } from "./types";
+import { Artist, CurrentlyPlayingTrack, Track, TrackType } from "./types";
 import { millisToMinutesAndSeconds } from "./utils";
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
@@ -24,7 +24,11 @@ export function getTrackMessageTimestamp(data: CurrentlyPlayingTrack) {
   ).toFixed(0)}%)](${url})`;
 }
 
-export function getTrackMessage(data: CurrentlyPlayingTrack, template: string) {
+export function getTrackMessage(
+  data: CurrentlyPlayingTrack,
+  artists: Artist[],
+  template: string,
+) {
   if (!isTrack(data)) throw new Error("Not a track.");
   const track = data.item as Track;
 
@@ -68,5 +72,31 @@ export function getTrackMessage(data: CurrentlyPlayingTrack, template: string) {
     .replace(
       /{{ timestamp }}|{{timestamp}}/g,
       `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`,
+    )
+    .replace(
+      /{{ genres }}|{{genres}}/g,
+      Array.from(new Set(artists?.map((artist) => artist.genres)))
+        .flat(Infinity)
+        .join(", "),
+    )
+    .replace(
+      /{{ genres_array }}|{{genres_array}}/g,
+      Array.from(
+        new Set(artists?.map((artist) => artist.genres?.map((g) => `"${g}"`))),
+      )
+        .flat(Infinity)
+        .join(", "),
+    )
+    .replace(
+      /{{ genres_hashtag }}|{{genres_hashtag}}/g,
+      Array.from(
+        new Set(
+          artists?.map((artist) =>
+            artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`),
+          ),
+        ),
+      )
+        .flat(Infinity)
+        .join(" "),
     );
 }
