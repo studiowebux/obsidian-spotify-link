@@ -141,7 +141,12 @@ export default class SpotifyLinkPlugin extends Plugin {
       ) {
         template_index = 0;
       }
-      content = `${processCurrentlyPlayingTrack(track, await this.loadOrGetTemplate(this.settings.templates[template_index]))}\n\n`;
+      content = `${await processCurrentlyPlayingTrack(
+        this.settings.spotifyClientId,
+        this.settings.spotifyClientSecret,
+        track,
+        await this.loadOrGetTemplate(this.settings.templates[template_index]),
+      )}\n\n`;
     }
 
     const filename = `${normalizePath(

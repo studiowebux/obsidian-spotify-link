@@ -1,10 +1,11 @@
+import { getArtist } from "./api";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
 import {
   getTrackMessage,
   getTrackMessageTimestamp,
   getTrackType,
 } from "./track";
-import { CurrentlyPlayingTrack } from "./types";
+import { CurrentlyPlayingTrack, Track } from "./types";
 
 export function processCurrentlyPlayingTrackInput(
   data: CurrentlyPlayingTrack,
@@ -24,13 +25,18 @@ export function processCurrentlyPlayingTrackInput(
   return "No song is playing.";
 }
 
-export function processCurrentlyPlayingTrack(
+export async function processCurrentlyPlayingTrack(
+  clientId: string,
+  clientSecret: string,
   data: CurrentlyPlayingTrack,
   template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n{{ timestamp }}`,
-): string {
+): Promise<string> {
   if (data && data.is_playing) {
     if (getTrackType(data) === "track") {
-      return getTrackMessage(data, template);
+      const artists = (data.item as Track).artists.map((artist) =>
+        getArtist(clientId, clientSecret, artist.id),
+      );
+      return getTrackMessage(data, await Promise.all(artists), template);
     }
     if (getTrackType(data) === "episode") {
       return getEpisodeMessage(data, template);
