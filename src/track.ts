@@ -1,5 +1,5 @@
-import { CurrentlyPlayingTrack, Track, TrackType } from "./types";
 import { millisToMinutesAndSeconds, padZero } from "./utils";
+import { Artist, CurrentlyPlayingTrack, Track, TrackType } from "./types";
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
   return data.currently_playing_type;
@@ -24,7 +24,11 @@ export function getTrackMessageTimestamp(data: CurrentlyPlayingTrack) {
   ).toFixed(0)}%)](${url})`;
 }
 
-export function getTrackMessage(data: CurrentlyPlayingTrack, template: string) {
+export function getTrackMessage(
+  data: CurrentlyPlayingTrack,
+  artists: Artist[],
+  template: string,
+) {
   if (!isTrack(data)) throw new Error("Not a track.");
   const track = data.item as Track;
   return template
@@ -107,5 +111,57 @@ export function getTrackMessage(data: CurrentlyPlayingTrack, template: string) {
 
         return timestamp;
       },
+    )
+    .replace(
+      /{{ genres }}|{{genres}}/g,
+      Array.from(new Set(artists?.map((artist) => artist.genres)))
+        .flat(Infinity)
+        .join(", "),
+    )
+    .replace(
+      /{{ genres_array }}|{{genres_array}}/g,
+      Array.from(
+        new Set(artists?.map((artist) => artist.genres?.map((g) => `"${g}"`))),
+      )
+        .flat(Infinity)
+        .join(", "),
+    )
+    .replace(
+      /{{ genres_hashtag }}|{{genres_hashtag}}/g,
+      Array.from(
+        new Set(
+          artists?.map((artist) =>
+            artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`),
+          ),
+        ),
+      )
+        .flat(Infinity)
+        .join(" "),
+    )
+    .replace(
+      /{{ followers }}|{{followers}}/g,
+      artists.length > 1
+        ? artists
+            ?.map((artist) => `${artist.name}: ${artist.followers.total}`)
+            .join(", ")
+        : artists[0].followers.total.toString(),
+    )
+    .replace(
+      /{{ popularity }}|{{popularity}}/g,
+      artists.length > 1
+        ? artists
+            ?.map((artist) => `${artist.name}: ${artist.popularity}`)
+            .join(", ")
+        : artists[0].popularity.toString(),
+    )
+    .replace(
+      /{{ artist_image }}|{{artist_image}}/g,
+      artists
+        ?.map((artist) => `![${artist.name}](${artist.images[0].url})`)
+        .join(", "),
+    )
+    .replace(
+      /{{ artist_name }}|{{artist_name}}/g,
+      artists?.map((artist) => artist.name).join(", "),
     );
 }

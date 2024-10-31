@@ -111,14 +111,20 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ artists }}" })
       .createEl("li", { text: "{{ song_name }}" })
       .createEl("li", { text: "{{ song_link }}" })
-      .createEl("li", { text: "{{ timestamp }}" })
       .createEl("li", { text: "{{ timestampz }}" })
       .createEl("li", { text: "{{ timestamp(HH:mm) }}" })
       .createEl("li", { text: "{{ timestampz(HH:mm) }}" })
       .createEl("li", { text: "{{ timestamp(YYYY-MM-DD) }}" })
       .createEl("li", { text: "{{ timestampz(YYYY-MM-DD) }}" })
       .createEl("li", { text: "{{ timestamp(YYYY-MM-DD HH:mm) }}" })
-      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD HH:mm) }}" });
+      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD HH:mm) }}" })
+      .createEl("li", { text: "{{ genres }}" })
+      .createEl("li", { text: "{{ genres_array }}" })
+      .createEl("li", { text: "{{ genres_hashtag }}" })
+      .createEl("li", { text: "{{ followers }}" })
+      .createEl("li", { text: "{{ artist_image }}" })
+      .createEl("li", { text: "{{ popularity }}" })
+      .createEl("li", { text: "{{ artist_names }}" });
 
     divDoc.createEl("p", { text: "Available variables (podcast):" });
     divDoc
