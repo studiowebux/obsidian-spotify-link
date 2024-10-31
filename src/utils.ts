@@ -22,3 +22,7 @@ export function isPath(str: string) {
   const pathRegex = /^[a-zA-Z0-9_\\/.]+$/;
   return Boolean(str.match(pathRegex));
 }
+
+export function padZero(date: string | number) {
+  return ("0" + date).slice(-2);
+}

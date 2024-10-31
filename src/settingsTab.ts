@@ -114,7 +114,11 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ timestamp }}" })
       .createEl("li", { text: "{{ timestampz }}" })
       .createEl("li", { text: "{{ timestamp(HH:mm) }}" })
-      .createEl("li", { text: "{{ timestampz(HH:mm) }}" });
+      .createEl("li", { text: "{{ timestampz(HH:mm) }}" })
+      .createEl("li", { text: "{{ timestamp(YYYY-MM-DD) }}" })
+      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD) }}" })
+      .createEl("li", { text: "{{ timestamp(YYYY-MM-DD HH:mm) }}" })
+      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD HH:mm) }}" });
 
     divDoc.createEl("p", { text: "Available variables (podcast):" });
     divDoc
@@ -142,7 +146,11 @@ export default class SettingsTab extends PluginSettingTab {
       .createEl("li", { text: "{{ timestamp }}" })
       .createEl("li", { text: "{{ timestampz }}" })
       .createEl("li", { text: "{{ timestamp(HH:mm) }}" })
-      .createEl("li", { text: "{{ timestampz(HH:mm) }}" });
+      .createEl("li", { text: "{{ timestampz(HH:mm) }}" })
+      .createEl("li", { text: "{{ timestamp(YYYY-MM-DD) }}" })
+      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD) }}" })
+      .createEl("li", { text: "{{ timestamp(YYYY-MM-DD HH:mm) }}" })
+      .createEl("li", { text: "{{ timestampz(YYYY-MM-DD HH:mm) }}" });
 
     divDoc.createEl("p", { text: "Template Selection:" });
     divDoc.createEl("p", {
