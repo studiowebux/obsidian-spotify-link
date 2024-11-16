@@ -1,5 +1,5 @@
+import { millisToMinutesAndSeconds, padZero } from "./utils";
 import { Artist, CurrentlyPlayingTrack, Track, TrackType } from "./types";
-import { millisToMinutesAndSeconds } from "./utils";
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
   return data.currently_playing_type;
@@ -31,7 +31,6 @@ export function getTrackMessage(
 ) {
   if (!isTrack(data)) throw new Error("Not a track.");
   const track = data.item as Track;
-
   return template
     .replace(/{{ song_name }}|{{song_name}}/g, track.name)
     .replace(/{{ song_link }}|{{song_link}}/g, track.external_urls.spotify)
@@ -70,8 +69,48 @@ export function getTrackMessage(
     )
     .replace(/{{ album }}|{{album}}/g, track.album.name)
     .replace(
-      /{{ timestamp }}|{{timestamp}}/g,
-      `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`,
+      /{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
+      (_match, ...options) => {
+        const matches = options
+          .slice(0, options.length - 2)
+          .filter((m) => m !== undefined);
+
+        let timestamp = "";
+        const hasYearMonthDate = matches.includes("YYYY-MM-DD");
+        const hasHourMinutes =
+          matches.includes(" HH:mm") || matches.includes("HH:mm");
+        if (matches.includes("z")) {
+          if (hasYearMonthDate) {
+            timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
+          }
+          if (hasHourMinutes) {
+            if (timestamp.length > 0) {
+              timestamp += " ";
+            }
+            timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
+          }
+
+          if (matches.length === 1) {
+            timestamp = `${new Date().toISOString()}`;
+          }
+        } else {
+          if (hasYearMonthDate) {
+            timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
+          }
+          if (hasHourMinutes) {
+            if (timestamp.length > 0) {
+              timestamp += " ";
+            }
+            timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
+          }
+
+          if (matches.length === 1) {
+            timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
+          }
+        }
+
+        return timestamp;
+      },
     )
     .replace(
       /{{ genres }}|{{genres}}/g,

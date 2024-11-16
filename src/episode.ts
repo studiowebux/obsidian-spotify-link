@@ -1,5 +1,5 @@
 import { CurrentlyPlayingTrack, Episode } from "./types";
-import { millisToMinutesAndSeconds, millisToSeconds } from "./utils";
+import { millisToMinutesAndSeconds, millisToSeconds, padZero } from "./utils";
 
 export function isEpisode(data: CurrentlyPlayingTrack) {
   return data.item.type === "episode";
@@ -104,7 +104,47 @@ export function getEpisodeMessage(
       progressInMinutesAndSeconds,
     )
     .replace(
-      /{{ timestamp }}|{{timestamp}}/g,
-      `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`,
+      /{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))?}}/g,
+      (_match, ...options) => {
+        const matches = options
+          .slice(0, options.length - 2)
+          .filter((m) => m !== undefined);
+
+        let timestamp = "";
+        const hasYearMonthDate = matches.includes("YYYY-MM-DD");
+        const hasHourMinutes =
+          matches.includes(" HH:mm") || matches.includes("HH:mm");
+        if (matches.includes("z")) {
+          if (hasYearMonthDate) {
+            timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
+          }
+          if (hasHourMinutes) {
+            if (timestamp.length > 0) {
+              timestamp += " ";
+            }
+            timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
+          }
+
+          if (matches.length === 1) {
+            timestamp = `${new Date().toISOString()}`;
+          }
+        } else {
+          if (hasYearMonthDate) {
+            timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
+          }
+          if (hasHourMinutes) {
+            if (timestamp.length > 0) {
+              timestamp += " ";
+            }
+            timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
+          }
+
+          if (matches.length === 1) {
+            timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
+          }
+        }
+
+        return timestamp;
+      },
     );
 }
