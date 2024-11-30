@@ -50,6 +50,16 @@ export function getTrackMessage(
 
 				const prefix = matches[0]?.substring(1) || "";
 				const suffix = matches[1]?.substring(1) || "";
+				const isTag = prefix === "#";
+
+				if (isTag) {
+					return track.artists
+						.map(
+							(a) =>
+								`${prefix}${a.name?.replace(/ /g, "_")}${suffix}`,
+						)
+						.join("\n");
+				}
 
 				return track.artists
 					.map((a) => `${prefix}${a.name}${suffix}`)
