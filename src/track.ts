@@ -42,6 +42,31 @@ export function getTrackMessage(
 			track.artists.map((a) => a.name).join(", "),
 		)
 		.replace(
+			/{{ artists_formatted(:.*?)?(:.*?)? }}|{{artists_formatted(:.*?)?(:.*?)?}}/g,
+			(_match, ...options) => {
+				const matches = options
+					.slice(0, options.length - 2)
+					.filter((m) => m !== undefined);
+
+				const prefix = matches[0]?.substring(1) || "";
+				const suffix = matches[1]?.substring(1) || "";
+				const isTag = prefix === "#";
+
+				if (isTag) {
+					return track.artists
+						.map(
+							(a) =>
+								`${prefix}${a.name?.replace(/ /g, "_")}${suffix}`,
+						)
+						.join("\n");
+				}
+
+				return track.artists
+					.map((a) => `${prefix}${a.name}${suffix}`)
+					.join("\n");
+			},
+		)
+		.replace(
 			/{{ album_release }}|{{album_release}}/g,
 			track.album.release_date,
 		)
