@@ -31,7 +31,6 @@ export function getTrackMessage(
 ) {
 	if (!isTrack(data)) throw new Error("Not a track.");
 	const track = data.item as Track;
-	console.log(template);
 	return template
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
 		.replace(
@@ -45,7 +44,6 @@ export function getTrackMessage(
 		.replace(
 			/{{ artists_formatted(:.*?)?(:.*?)? }}|{{artists_formatted(:.*?)?(:.*?)?}}/g,
 			(_match, ...options) => {
-				console.log("Bonjour");
 				const matches = options
 					.slice(0, options.length - 2)
 					.filter((m) => m !== undefined);
