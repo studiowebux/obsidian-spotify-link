@@ -92,6 +92,10 @@ export default class SettingsTab extends PluginSettingTab {
 			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
 			text: "Custom Template Documentation",
 		});
+		divDoc.createEl("a", {
+			href: "https://github.com/studiowebux/obsidian-spotify-link/blob/main/examples/",
+			text: "Template Examples",
+		});
 		divDoc.createEl("p", { text: "Available variables (song):" });
 		divDoc
 			.createEl("ul")
