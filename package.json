@@ -1,6 +1,6 @@
 {
 	"name": "spotify-link",
-	"version": "1.8.0",
+	"version": "1.9.0",
 	"description": "Include the song you're currently listening to in your Obsidian (https://obsidian.md) note",
 	"main": "main.js",
 	"scripts": {
