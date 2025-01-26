@@ -3,6 +3,7 @@
 <h2>Obsidian.md - Spotify Plugin</h2>
 
 <p>Obsidian.md Plugin to include the song or podcast you're currently listening to in your note.</p>
+<p>Fetch daily history of played tracks.</p>
 
 <p align="center">
   <a href="https://github.com/studiowebux/obsidian-spotify-link/issues">Report Bug</a>
@@ -16,9 +17,10 @@
 ## About
 
 - **Spotify Account Integration**: Users can connect their Spotify accounts using the official Spotify API. This enables the plugin to access their **_current playing information_**.
-- **Song Insertion Shortcut**: With a simple snippet or shortcut, users can add the currently playing song from their Spotify account into the cursor position of their document. This feature simplifies the task of connecting music and creative thoughts.
+- **Song/Podcast Insertion Shortcut**: With a simple snippet or shortcut, users can add the currently playing song from their Spotify account into the cursor position of their document. This feature simplifies the task of connecting music and creative thoughts.
 - **Custom Template**: Create your template to add the currently playing song in your notes.
-- **Supports**: Songs and podcasts
+- **Supports**: Songs and podcasts.
+- **Fetch all played tracks for the day**: Works only for the current day, fetch tracks from the beginning of the day.
 
 ---
 
