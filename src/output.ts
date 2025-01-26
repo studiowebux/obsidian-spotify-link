@@ -53,7 +53,7 @@ export async function processCurrentlyPlayingTrack(
 export async function processRecentlyPlayedTracks(
 	clientId: string,
 	clientSecret: string,
-	data: RecentlyPlayed,
+	data: RecentlyPlayed | null,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }} @ {{ played_at }}`,
 ): Promise<string> {
 	const messages: string[] = [];
