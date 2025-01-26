@@ -281,7 +281,7 @@ export async function getRecentlyPlayedTracks(
 		if (!recentlyPlayed) {
 			recentlyPlayed = json;
 		} else {
-			recentlyPlayed.items.push(...json.items);
+			recentlyPlayed.items.unshift(...json.items);
 		}
 
 		if (json?.next) {

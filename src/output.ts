@@ -56,7 +56,6 @@ export async function processRecentlyPlayedTracks(
 	data: RecentlyPlayed,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }} @ {{ played_at }}`,
 ): Promise<string> {
-	console.debug(data);
 	const messages: string[] = [];
 	if (data && data.items) {
 		for (const item of data.items) {

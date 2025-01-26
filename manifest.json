@@ -1,9 +1,9 @@
 {
 	"id": "spotify-link",
 	"name": "Spotify Link",
-	"version": "1.9.0",
+	"version": "1.10.0",
 	"minAppVersion": "0.15.0",
-	"description": "Include the song you're currently listening to in your note.",
+	"description": "Include the song or podcast you're currently listening to in your note.",
 	"author": "Studio Webux",
 	"authorUrl": "https://studiowebux.com",
 	"isDesktopOnly": false,
