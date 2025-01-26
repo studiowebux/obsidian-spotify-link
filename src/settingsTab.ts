@@ -208,6 +208,22 @@ export default class SettingsTab extends PluginSettingTab {
 					}),
 			);
 		new Setting(containerEl)
+			.setName("Template for recently played tracks")
+			.setDesc(
+				"Define a custom template to print the recently played tracks or a path to your template definition",
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"Example: '{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n",
+					)
+					.setValue(this.plugin.settings.templates[2])
+					.onChange(async (value) => {
+						this.plugin.settings.templates[2] = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
 			.setName("Default destination")
 			.setDesc(
 				"Destination to store track or episode when using the command palette, default at the root of your vault",
