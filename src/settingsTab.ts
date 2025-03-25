@@ -128,7 +128,10 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ followers }}" })
 			.createEl("li", { text: "{{ artist_image }}" })
 			.createEl("li", { text: "{{ popularity }}" })
-			.createEl("li", { text: "{{ artist_names }}" });
+			.createEl("li", { text: "{{ artist_names }}" })
+			.createEl("li", { text: "{{ album_cover_url_large }}" })
+			.createEl("li", { text: "{{ album_cover_url_medium }}" })
+			.createEl("li", { text: "{{ album_cover_url_small }}" });
 
 		divDoc.createEl("p", { text: "Available variables (podcast):" });
 		divDoc
