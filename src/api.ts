@@ -8,7 +8,6 @@ import {
 	RecentlyPlayed,
 	RefreshTokenResponse,
 	SpotifyAuthCallback,
-	Track,
 } from "./types";
 import { prepareData } from "./utils";
 import { processCurrentlyPlayingTrackInput } from "./output";

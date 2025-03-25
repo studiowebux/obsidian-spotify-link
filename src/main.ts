@@ -14,8 +14,14 @@ import {
 	SpotifyAuthCallback,
 	CurrentlyPlayingTrack,
 	RecentlyPlayed,
+	Track,
 } from "./types";
-import { getSpotifyUrl, handleCallback, requestRefreshToken } from "./api";
+import {
+	getArtist,
+	getSpotifyUrl,
+	handleCallback,
+	requestRefreshToken,
+} from "./api";
 import SettingsTab from "./settingsTab";
 import { handleEditor, handleTemplateEditor } from "./ui";
 import { onLogin, onAutoLogin } from "./events";
@@ -124,6 +130,30 @@ export default class SpotifyLinkPlugin extends Plugin {
 		}
 	}
 
+	async getName(track?: CurrentlyPlayingTrack): Promise<string> {
+		let name = new Date().toISOString();
+
+		if (track?.item?.name) {
+			name = track?.item?.name;
+
+			if (this.settings.appendArtistNames) {
+				const artists = await Promise.all(
+					(track.item as Track).artists.map((artist) =>
+						getArtist(
+							this.settings.spotifyClientId,
+							this.settings.spotifyClientSecret,
+							artist.id,
+						),
+					),
+				);
+
+				name += `-${artists.map((artist) => artist.name).join("_")}`;
+			}
+		}
+
+		return name;
+	}
+
 	async createFile(parent: string, id: string) {
 		let content = "";
 		let track: CurrentlyPlayingTrack | RecentlyPlayed | string | null =
@@ -187,7 +217,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		}
 
 		const filename = `${normalizePath(
-			`/${parent}/${(track as CurrentlyPlayingTrack)?.item?.name ?? new Date().toISOString()}`,
+			`/${parent}/${await this.getName(track as CurrentlyPlayingTrack)}`,
 		).replace(/[:|.]/g, "_")}.md`;
 
 		const exists = await this.app.vault.adapter.exists(filename, true);

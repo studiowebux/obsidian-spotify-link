@@ -39,4 +39,5 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 	defaultDestination: "",
 	overwrite: false,
 	autoOpen: false,
+	appendArtistNames: false,
 };
