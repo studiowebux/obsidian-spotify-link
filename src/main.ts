@@ -147,7 +147,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					),
 				);
 
-				name += `-${artists.map((artist) => artist.name).join("_")}`;
+				name += `-${artists.map((artist) => artist.name.replace(/[^a-zA-Z0-9_-]+/g, "-")).join("_")}`;
 			}
 		}
 
