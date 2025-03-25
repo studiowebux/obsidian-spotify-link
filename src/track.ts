@@ -1,11 +1,5 @@
 import { millisToMinutesAndSeconds, padZero } from "./utils";
-import {
-	Artist,
-	CurrentlyPlayingTrack,
-	RecentlyPlayed,
-	Track,
-	TrackType,
-} from "./types";
+import { Artist, CurrentlyPlayingTrack, Track, TrackType } from "./types";
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
 	return data.currently_playing_type;

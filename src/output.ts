@@ -1,4 +1,4 @@
-import { getArtist, getRecentlyPlayedTracks } from "./api";
+import { getArtist } from "./api";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
 import {
 	getRecentlyPlayedTrackMessage,
