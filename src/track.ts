@@ -209,6 +209,18 @@ export function getTrackMessage(
 		.replace(
 			/{{ artist_name }}|{{artist_name}}/g,
 			artists?.map((artist) => artist.name).join(", "),
+		)
+		.replace(
+			/{{ album_cover_url_large }}|{{album_cover_url_large}}/g,
+			`${track.album.images[0].url}`,
+		)
+		.replace(
+			/{{ album_cover_url_medium }}|{{album_cover_url_medium}}/g,
+			`${track.album.images[1]?.url}`,
+		)
+		.replace(
+			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
+			`${track.album.images[2]?.url}`,
 		);
 }
 
@@ -406,5 +418,17 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(
 			/{{ artist_name }}|{{artist_name}}/g,
 			artists?.map((artist) => artist.name).join(", "),
+		)
+		.replace(
+			/{{ album_cover_url_large }}|{{album_cover_url_large}}/g,
+			`${track.album.images[0].url}`,
+		)
+		.replace(
+			/{{ album_cover_url_medium }}|{{album_cover_url_medium}}/g,
+			`${track.album.images[1]?.url}`,
+		)
+		.replace(
+			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
+			`${track.album.images[2]?.url}`,
 		);
 }
