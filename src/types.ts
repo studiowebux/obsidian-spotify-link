@@ -11,6 +11,7 @@ export type SpotifyLinkSettings = {
 	defaultDestination: string;
 	overwrite: boolean;
 	autoOpen: boolean;
+	appendArtistNames: boolean;
 };
 
 //

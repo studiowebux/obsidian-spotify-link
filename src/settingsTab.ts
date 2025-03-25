@@ -264,6 +264,17 @@ export default class SettingsTab extends PluginSettingTab {
 				});
 			});
 
+		new Setting(containerEl)
+			.setName("Append Artist Name(s)")
+			.setDesc("Append artist name(s) to create unique filename.")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.appendArtistNames);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.appendArtistNames = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
 		containerEl.createEl("hr");
 
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
