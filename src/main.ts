@@ -147,8 +147,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 					),
 				);
 
-				// Remove special characters
-				name += `-${artists.map((artist) => artist.name.replace(/[/\\:*?"<>|&^%$`{}()]/g, "-")).join("_")}`;
+				// Remove special characters (that are not allowed)
+				name += `-${artists.map((artist) => artist.name.replace(/[/\\:#[\]|^%]/g, "-")).join("_")}`;
 			}
 		}
 

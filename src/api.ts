@@ -143,6 +143,7 @@ export async function getCurrentlyPlayingTrack(
 		}
 
 		const currentlyPlayingTrack: CurrentlyPlayingTrack | null = json;
+
 		if (!currentlyPlayingTrack)
 			throw new Error("Unable to get the currently playing track.");
 		return currentlyPlayingTrack;

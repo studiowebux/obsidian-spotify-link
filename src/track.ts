@@ -72,7 +72,7 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_large }}|{{album_cover_large}}/g,
-			`![${track.album.name}](${track.album.images[0].url})`,
+			`![${track.album.name}](${track.album.images[0]?.url})`,
 		)
 		.replace(
 			/{{ album_cover_medium }}|{{album_cover_medium}}/g,
@@ -84,7 +84,7 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
-			`[Cover - ${track.album.name}](${track.album.images[0].url})`,
+			`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
 		)
 		.replace(
 			/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
@@ -197,7 +197,7 @@ export function getTrackMessage(
 		.replace(
 			/{{ artist_image }}|{{artist_image}}/g,
 			artists
-				?.map((artist) => `![${artist.name}](${artist.images[0].url})`)
+				?.map((artist) => `![${artist.name}](${artist.images[0]?.url})`)
 				.join(", "),
 		)
 		.replace(
@@ -206,7 +206,7 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_url_large }}|{{album_cover_url_large}}/g,
-			`${track.album.images[0].url}`,
+			`${track.album.images[0]?.url}`,
 		)
 		.replace(
 			/{{ album_cover_url_medium }}|{{album_cover_url_medium}}/g,
@@ -281,7 +281,7 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_large }}|{{album_cover_large}}/g,
-			`![${track.album.name}](${track.album.images[0].url})`,
+			`![${track.album.name}](${track.album.images[0]?.url})`,
 		)
 		.replace(
 			/{{ album_cover_medium }}|{{album_cover_medium}}/g,
@@ -293,7 +293,7 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
-			`[Cover - ${track.album.name}](${track.album.images[0].url})`,
+			`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
 		)
 		.replace(
 			/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
@@ -406,7 +406,7 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(
 			/{{ artist_image }}|{{artist_image}}/g,
 			artists
-				?.map((artist) => `![${artist.name}](${artist.images[0].url})`)
+				?.map((artist) => `![${artist.name}](${artist.images[0]?.url})`)
 				.join(", "),
 		)
 		.replace(
@@ -415,7 +415,7 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ album_cover_url_large }}|{{album_cover_url_large}}/g,
-			`${track.album.images[0].url}`,
+			`${track.album.images[0]?.url}`,
 		)
 		.replace(
 			/{{ album_cover_url_medium }}|{{album_cover_url_medium}}/g,
