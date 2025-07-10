@@ -17,7 +17,8 @@ export default class SettingsTab extends PluginSettingTab {
 		// INSTRUCTIONS
 		const div = containerEl.createDiv();
 		div.createEl("p", {
-			text: "Follow the link below to get your Client Id and Client Secret, you need a spotify account to get access.",
+			text:
+				"Follow the link below to get your Client Id and Client Secret, you need a spotify account to get access.",
 		});
 		div.createEl("a", {
 			href: "https://developer.spotify.com/dashboard/",
@@ -31,10 +32,12 @@ export default class SettingsTab extends PluginSettingTab {
 				text: "Set the Redirect URI to : obsidian://spotify-auth/",
 			})
 			.createEl("li", {
-				text: "Select the Spotify icon located in Obsidian's left sidebar to connect.",
+				text:
+					"Select the Spotify icon located in Obsidian's left sidebar to connect.",
 			});
 		div.createEl("p", {
-			text: "NOTICE: The id and secret will be stored unencrypted on your local device. If you sync your data to a public source, the id and secret will be shown as-is.",
+			text:
+				"NOTICE: The id and secret will be stored unencrypted on your local device. If you sync your data to a public source, the id and secret will be shown as-is.",
 		});
 
 		//
@@ -91,11 +94,13 @@ export default class SettingsTab extends PluginSettingTab {
 		divDoc.createEl("h6", { text: "External resources" });
 		const list = divDoc.createEl("ul");
 		list.createEl("li").createEl("a", {
-			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
+			href:
+				"https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
 			text: "Custom Template Documentation",
 		});
 		list.createEl("li").createEl("a", {
-			href: "https://github.com/studiowebux/obsidian-spotify-link/blob/main/examples/",
+			href:
+				"https://github.com/studiowebux/obsidian-spotify-link/blob/main/examples/",
 			text: "Template Examples",
 		});
 
@@ -131,7 +136,10 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ artist_names }}" })
 			.createEl("li", { text: "{{ album_cover_url_large }}" })
 			.createEl("li", { text: "{{ album_cover_url_medium }}" })
-			.createEl("li", { text: "{{ album_cover_url_small }}" });
+			.createEl("li", { text: "{{ album_cover_url_small }}" })
+			.createEl("li", { text: "{{ song_url }}" })
+			.createEl("li", { text: "{{ album_url }}" })
+			.createEl("li", { text: "{{ main_artist_url }}" });
 
 		divDoc.createEl("p", { text: "Available variables (podcast):" });
 		divDoc
@@ -167,15 +175,18 @@ export default class SettingsTab extends PluginSettingTab {
 
 		divDoc.createEl("p", { text: "Template Selection:" });
 		divDoc.createEl("p", {
-			text: "You have two options to specify a template: 'Inline' or 'Path-based'.",
+			text:
+				"You have two options to specify a template: 'Inline' or 'Path-based'.",
 		});
 		divDoc
 			.createEl("ul")
 			.createEl("li", {
-				text: "To use the inline method, simply include your template directly.",
+				text:
+					"To use the inline method, simply include your template directly.",
 			})
 			.createEl("li", {
-				text: "For path-based selection, you must reference the Vault. A valid example would be: 'Templates/Spotify/track.md' and the content structure is exactly the same as the inline template.",
+				text:
+					"For path-based selection, you must reference the Vault. A valid example would be: 'Templates/Spotify/track.md' and the content structure is exactly the same as the inline template.",
 			});
 
 		new Setting(containerEl)
@@ -192,7 +203,7 @@ export default class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.templates[0] = value;
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 		new Setting(containerEl)
 			.setName("Template for podcast")
@@ -208,7 +219,7 @@ export default class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.templates[1] = value;
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 		new Setting(containerEl)
 			.setName("Template for recently played tracks")
@@ -224,7 +235,7 @@ export default class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.templates[2] = value;
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 		new Setting(containerEl)
 			.setName("Default destination")
@@ -237,7 +248,7 @@ export default class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.defaultDestination = value;
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
 		new Setting(containerEl)
@@ -290,13 +301,14 @@ export default class SettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.spotifyScopes = value;
 						await this.plugin.saveSettings();
-					}),
+					})
 			);
 
 		containerEl.createEl("hr");
 
 		containerEl.createEl("a", {
-			href: "https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link",
+			href:
+				"https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link",
 			text: "Official Plugin Documentation",
 		});
 	}
