@@ -237,7 +237,7 @@ export function getTrackMessage(
 		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
 		.replace(
 			/{{ main_artist_url }}|{{main_artist_url}}/g,
-			track.artists[0].href,
+			track.artists[0]?.href,
 		);
 }
 
@@ -468,6 +468,6 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
 		.replace(
 			/{{ main_artist_url }}|{{main_artist_url}}/g,
-			track.artists[0].href,
+			track.artists[0]?.href,
 		);
 }
