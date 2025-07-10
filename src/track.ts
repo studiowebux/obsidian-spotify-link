@@ -16,12 +16,16 @@ export function getTrackMessageTimestamp(data: CurrentlyPlayingTrack) {
 	const progress = data.progress_ms;
 	const duration = parseInt(track.duration_ms);
 	const url = track.external_urls.spotify;
-	return `['**${song_name}**' by ***${artists
-		.map((a) => a?.name || "Unknown")
-		.join(", ")}*** **${millisToMinutesAndSeconds(progress)}** (${(
-		(progress / duration) *
-		100
-	).toFixed(0)}%)](${url})`;
+	return `['**${song_name}**' by ***${
+		artists
+			.map((a) => a?.name || "Unknown")
+			.join(", ")
+	}*** **${millisToMinutesAndSeconds(progress)}** (${
+		(
+			(progress / duration) *
+			100
+		).toFixed(0)
+	}%)](${url})`;
 }
 
 export function getTrackMessage(
@@ -35,7 +39,9 @@ export function getTrackMessage(
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
 		.replace(
 			/{{ song_link }}|{{song_link}}/g,
-			`[${track.name} - ${track.artists.map((a) => a.name).join(", ")}](${track.external_urls.spotify})`,
+			`[${track.name} - ${
+				track.artists.map((a) => a.name).join(", ")
+			}](${track.external_urls.spotify})`,
 		)
 		.replace(
 			/{{ artists }}|{{artist}}/g,
@@ -56,7 +62,9 @@ export function getTrackMessage(
 					return track.artists
 						.map(
 							(a) =>
-								`${prefix}${a.name?.replace(/ /g, "_")}${suffix}`,
+								`${prefix}${
+									a.name?.replace(/ /g, "_")
+								}${suffix}`,
 						)
 						.join("\n");
 				}
@@ -108,17 +116,21 @@ export function getTrackMessage(
 
 				let timestamp = "";
 				const hasYearMonthDate = matches.includes("YYYY-MM-DD");
-				const hasHourMinutes =
-					matches.includes(" HH:mm") || matches.includes("HH:mm");
+				const hasHourMinutes = matches.includes(" HH:mm") ||
+					matches.includes("HH:mm");
 				if (matches.includes("z")) {
 					if (hasYearMonthDate) {
-						timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
+						timestamp += `${new Date().getUTCFullYear()}-${
+							padZero(new Date().getUTCMonth() + 1)
+						}-${padZero(new Date().getUTCDate())}`;
 					}
 					if (hasHourMinutes) {
 						if (timestamp.length > 0) {
 							timestamp += " ";
 						}
-						timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
+						timestamp += `${padZero(new Date().getUTCHours())}:${
+							padZero(new Date().getUTCMinutes())
+						}`;
 					}
 
 					if (matches.length === 1) {
@@ -126,17 +138,23 @@ export function getTrackMessage(
 					}
 				} else {
 					if (hasYearMonthDate) {
-						timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
+						timestamp += `${new Date().getFullYear()}-${
+							padZero(new Date().getMonth() + 1)
+						}-${padZero(new Date().getDate())}`;
 					}
 					if (hasHourMinutes) {
 						if (timestamp.length > 0) {
 							timestamp += " ";
 						}
-						timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
+						timestamp += `${padZero(new Date().getHours())}:${
+							padZero(new Date().getMinutes())
+						}`;
 					}
 
 					if (matches.length === 1) {
-						timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
+						timestamp = `${new Date().toDateString()} - ${
+							new Date().toLocaleTimeString()
+						}`;
 					}
 				}
 
@@ -154,7 +172,7 @@ export function getTrackMessage(
 			Array.from(
 				new Set(
 					artists?.map((artist) =>
-						artist.genres?.map((g) => `"${g}"`),
+						artist.genres?.map((g) => `"${g}"`)
 					),
 				),
 			)
@@ -166,7 +184,7 @@ export function getTrackMessage(
 			Array.from(
 				new Set(
 					artists?.map((artist) =>
-						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`),
+						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`)
 					),
 				),
 			)
@@ -177,21 +195,20 @@ export function getTrackMessage(
 			/{{ followers }}|{{followers}}/g,
 			artists.length > 1
 				? artists
-						?.map(
-							(artist) =>
-								`${artist.name}: ${artist.followers.total}`,
-						)
-						.join(", ")
+					?.map(
+						(artist) => `${artist.name}: ${artist.followers.total}`,
+					)
+					.join(", ")
 				: artists[0].followers.total.toString(),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
-						?.map(
-							(artist) => `${artist.name}: ${artist.popularity}`,
-						)
-						.join(", ")
+					?.map(
+						(artist) => `${artist.name}: ${artist.popularity}`,
+					)
+					.join(", ")
 				: artists[0].popularity.toString(),
 		)
 		.replace(
@@ -215,6 +232,12 @@ export function getTrackMessage(
 		.replace(
 			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
 			`${track.album.images[2]?.url}`,
+		)
+		.replace(/{{ song_url }}|{{song_url}}/g, track.href)
+		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
+		.replace(
+			/{{ main_artist_url }}|{{main_artist_url}}/g,
+			track.artists[0].href,
 		);
 }
 
@@ -237,14 +260,19 @@ export function getRecentlyPlayedTrackMessage(
 	const track = data.track as Track;
 	return template
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
-
 		.replace(
 			/{{ played_at }}|{{played_at}}/g,
-			`${`${new Date(data.played_at).getFullYear()}-${padZero(new Date(data.played_at).getMonth() + 1)}-${padZero(new Date(data.played_at).getDate())}`} ${padZero(new Date(data.played_at).getHours())}:${padZero(new Date(data.played_at).getMinutes())}`,
+			`${`${new Date(data.played_at).getFullYear()}-${
+				padZero(new Date(data.played_at).getMonth() + 1)
+			}-${padZero(new Date(data.played_at).getDate())}`} ${
+				padZero(new Date(data.played_at).getHours())
+			}:${padZero(new Date(data.played_at).getMinutes())}`,
 		)
 		.replace(
 			/{{ song_link }}|{{song_link}}/g,
-			`[${track.name} - ${track.artists.map((a) => a.name).join(", ")}](${track.external_urls.spotify})`,
+			`[${track.name} - ${
+				track.artists.map((a) => a.name).join(", ")
+			}](${track.external_urls.spotify})`,
 		)
 		.replace(
 			/{{ artists }}|{{artist}}/g,
@@ -265,7 +293,9 @@ export function getRecentlyPlayedTrackMessage(
 					return track.artists
 						.map(
 							(a) =>
-								`${prefix}${a.name?.replace(/ /g, "_")}${suffix}`,
+								`${prefix}${
+									a.name?.replace(/ /g, "_")
+								}${suffix}`,
 						)
 						.join("\n");
 				}
@@ -317,17 +347,21 @@ export function getRecentlyPlayedTrackMessage(
 
 				let timestamp = "";
 				const hasYearMonthDate = matches.includes("YYYY-MM-DD");
-				const hasHourMinutes =
-					matches.includes(" HH:mm") || matches.includes("HH:mm");
+				const hasHourMinutes = matches.includes(" HH:mm") ||
+					matches.includes("HH:mm");
 				if (matches.includes("z")) {
 					if (hasYearMonthDate) {
-						timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
+						timestamp += `${new Date().getUTCFullYear()}-${
+							padZero(new Date().getUTCMonth() + 1)
+						}-${padZero(new Date().getUTCDate())}`;
 					}
 					if (hasHourMinutes) {
 						if (timestamp.length > 0) {
 							timestamp += " ";
 						}
-						timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
+						timestamp += `${padZero(new Date().getUTCHours())}:${
+							padZero(new Date().getUTCMinutes())
+						}`;
 					}
 
 					if (matches.length === 1) {
@@ -335,17 +369,23 @@ export function getRecentlyPlayedTrackMessage(
 					}
 				} else {
 					if (hasYearMonthDate) {
-						timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
+						timestamp += `${new Date().getFullYear()}-${
+							padZero(new Date().getMonth() + 1)
+						}-${padZero(new Date().getDate())}`;
 					}
 					if (hasHourMinutes) {
 						if (timestamp.length > 0) {
 							timestamp += " ";
 						}
-						timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
+						timestamp += `${padZero(new Date().getHours())}:${
+							padZero(new Date().getMinutes())
+						}`;
 					}
 
 					if (matches.length === 1) {
-						timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
+						timestamp = `${new Date().toDateString()} - ${
+							new Date().toLocaleTimeString()
+						}`;
 					}
 				}
 
@@ -363,7 +403,7 @@ export function getRecentlyPlayedTrackMessage(
 			Array.from(
 				new Set(
 					artists?.map((artist) =>
-						artist.genres?.map((g) => `"${g}"`),
+						artist.genres?.map((g) => `"${g}"`)
 					),
 				),
 			)
@@ -375,7 +415,7 @@ export function getRecentlyPlayedTrackMessage(
 			Array.from(
 				new Set(
 					artists?.map((artist) =>
-						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`),
+						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`)
 					),
 				),
 			)
@@ -386,21 +426,20 @@ export function getRecentlyPlayedTrackMessage(
 			/{{ followers }}|{{followers}}/g,
 			artists.length > 1
 				? artists
-						?.map(
-							(artist) =>
-								`${artist.name}: ${artist.followers.total}`,
-						)
-						.join(", ")
+					?.map(
+						(artist) => `${artist.name}: ${artist.followers.total}`,
+					)
+					.join(", ")
 				: artists[0].followers.total.toString(),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
-						?.map(
-							(artist) => `${artist.name}: ${artist.popularity}`,
-						)
-						.join(", ")
+					?.map(
+						(artist) => `${artist.name}: ${artist.popularity}`,
+					)
+					.join(", ")
 				: artists[0].popularity.toString(),
 		)
 		.replace(
@@ -424,5 +463,11 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(
 			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
 			`${track.album.images[2]?.url}`,
+		)
+		.replace(/{{ song_url }}|{{song_url}}/g, track.href)
+		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
+		.replace(
+			/{{ main_artist_url }}|{{main_artist_url}}/g,
+			track.artists[0].href,
 		);
 }
