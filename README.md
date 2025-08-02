@@ -9,7 +9,10 @@
   <a href="https://github.com/studiowebux/obsidian-spotify-link/issues">Report Bug</a>
   ·
   <a href="https://github.com/studiowebux/obsidian-spotify-link/issues">Request Feature</a>
+  ·
+  <a href="https://discord.gg/KZ34mhTWZR">Discord Support</a>
 </p>
+
 </div>
 
 ---
