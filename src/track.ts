@@ -43,18 +43,6 @@ export function getTrackMessage(
 				`${track.external_urls.spotify}`,
 			)
 			.replace(
-				/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
-				`${track.album.images[0]?.url}`,
-			)
-			.replace(
-				/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
-				`${track.album.images[1]?.url}`,
-			)
-			.replace(
-				/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
-				`${track.album.images[2]?.url}`,
-			)
-			.replace(
 				/{{ album_link }}|{{album_link}}/g,
 				`${track.album.external_urls.spotify}`,
 			)
@@ -65,18 +53,6 @@ export function getTrackMessage(
 				`[${track.name} - ${
 					track.artists.map((a) => a.name).join(", ")
 				}](${track.external_urls.spotify})`,
-			)
-			.replace(
-				/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
-				`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
-			)
-			.replace(
-				/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
-				`[Cover - ${track.album.name}](${track.album.images[1]?.url})`,
-			)
-			.replace(
-				/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
-				`[Cover - ${track.album.name}](${track.album.images[2]?.url})`,
 			)
 			.replace(
 				/{{ album_link }}|{{album_link}}/g,
@@ -131,6 +107,18 @@ export function getTrackMessage(
 		.replace(
 			/{{ album_cover_small }}|{{album_cover_small}}/g,
 			`![${track.album.name}](${track.album.images[2]?.url})`,
+		)
+		.replace(
+			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
+			`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
+		)
+		.replace(
+			/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
+			`[Cover - ${track.album.name}](${track.album.images[1]?.url})`,
+		)
+		.replace(
+			/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
+			`[Cover - ${track.album.name}](${track.album.images[2]?.url})`,
 		)
 		.replace(/{{ album }}|{{album}}/g, track.album.name)
 		.replace(
