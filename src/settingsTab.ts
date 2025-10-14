@@ -286,6 +286,17 @@ export default class SettingsTab extends PluginSettingTab {
 				});
 			});
 
+		new Setting(containerEl)
+			.setName("Disable Hyperlinks")
+			.setDesc("Disable Hyperlinks for file properties.")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.disableHyperlinks);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.disableHyperlinks = value;
+					await this.plugin.saveSettings();
+				})
+			})
+
 		containerEl.createEl("hr");
 
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });

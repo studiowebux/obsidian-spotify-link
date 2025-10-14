@@ -214,6 +214,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 				await this.loadOrGetTemplate(
 					this.settings.templates[template_index],
 				),
+				this.settings.disableHyperlinks,
 			)}\n\n`;
 		}
 

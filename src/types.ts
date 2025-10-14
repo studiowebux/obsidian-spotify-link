@@ -12,6 +12,7 @@ export type SpotifyLinkSettings = {
 	overwrite: boolean;
 	autoOpen: boolean;
 	appendArtistNames: boolean;
+	disableHyperlinks: boolean;
 };
 
 //

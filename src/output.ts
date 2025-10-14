@@ -31,13 +31,14 @@ export async function processCurrentlyPlayingTrack(
 	clientSecret: string,
 	data: CurrentlyPlayingTrack,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n{{ timestamp }}`,
+	disableHyperlinks = false,
 ): Promise<string> {
 	if (data && data.is_playing) {
 		if (getTrackType(data) === "track") {
 			const artists = (data.item as Track).artists.map((artist) =>
 				getArtist(clientId, clientSecret, artist.id),
 			);
-			return getTrackMessage(data, await Promise.all(artists), template);
+			return getTrackMessage(data, await Promise.all(artists), template, disableHyperlinks);
 		}
 		if (getTrackType(data) === "episode") {
 			return getEpisodeMessage(data, template);

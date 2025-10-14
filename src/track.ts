@@ -32,17 +32,59 @@ export function getTrackMessage(
 	data: CurrentlyPlayingTrack,
 	artists: Artist[],
 	template: string,
+	disableHyperlinks: false,
 ) {
 	if (!isTrack(data)) throw new Error("Not a track.");
 	const track = data.item as Track;
+	if(disableHyperlinks) {
+		template = template
+			.replace(
+				/{{ song_link }}|{{song_link}}/g,
+				`${track.external_urls.spotify}`,
+			)
+			.replace(
+				/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
+				`${track.album.images[0]?.url}`,
+			)
+			.replace(
+				/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
+				`${track.album.images[1]?.url}`,
+			)
+			.replace(
+				/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
+				`${track.album.images[2]?.url}`,
+			)
+			.replace(
+				/{{ album_link }}|{{album_link}}/g,
+				`${track.album.external_urls.spotify}`,
+			)
+	} else {
+		template = template
+			.replace(
+				/{{ song_link }}|{{song_link}}/g,
+				`[${track.name} - ${
+					track.artists.map((a) => a.name).join(", ")
+				}](${track.external_urls.spotify})`,
+			)
+			.replace(
+				/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
+				`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
+			)
+			.replace(
+				/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
+				`[Cover - ${track.album.name}](${track.album.images[1]?.url})`,
+			)
+			.replace(
+				/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
+				`[Cover - ${track.album.name}](${track.album.images[2]?.url})`,
+			)
+			.replace(
+				/{{ album_link }}|{{album_link}}/g,
+				`[${track.album.name}](${track.album.external_urls.spotify})`,
+			)
+	}
 	return template
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
-		.replace(
-			/{{ song_link }}|{{song_link}}/g,
-			`[${track.name} - ${
-				track.artists.map((a) => a.name).join(", ")
-			}](${track.external_urls.spotify})`,
-		)
 		.replace(
 			/{{ artists }}|{{artist}}/g,
 			track.artists.map((a) => a.name).join(", "),
@@ -89,22 +131,6 @@ export function getTrackMessage(
 		.replace(
 			/{{ album_cover_small }}|{{album_cover_small}}/g,
 			`![${track.album.name}](${track.album.images[2]?.url})`,
-		)
-		.replace(
-			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
-			`[Cover - ${track.album.name}](${track.album.images[0]?.url})`,
-		)
-		.replace(
-			/{{ album_cover_link_medium }}|{{album_cover_link_medium}}/g,
-			`[Cover - ${track.album.name}](${track.album.images[1]?.url})`,
-		)
-		.replace(
-			/{{ album_cover_link_small }}|{{album_cover_link_small}}/g,
-			`[Cover - ${track.album.name}](${track.album.images[2]?.url})`,
-		)
-		.replace(
-			/{{ album_link }}|{{album_link}}/g,
-			`[${track.album.name}](${track.album.external_urls.spotify})`,
 		)
 		.replace(/{{ album }}|{{album}}/g, track.album.name)
 		.replace(
