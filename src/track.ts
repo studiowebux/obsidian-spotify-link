@@ -233,8 +233,8 @@ export function getTrackMessage(
 			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
 			`${track.album.images[2]?.url}`,
 		)
-		.replace(/{{ song_url }}|{{song_url}}/g, track.href)
-		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
+		.replace(/{{ song_url }}|{{song_url}}/g, track.external_urls.spotify)
+		.replace(/{{ album_url }}|{{album_url}}/g, track.album.external_urls.spotify)
 		.replace(
 			/{{ main_artist_url }}|{{main_artist_url}}/g,
 			track.artists[0]?.href,
@@ -464,8 +464,8 @@ export function getRecentlyPlayedTrackMessage(
 			/{{ album_cover_url_small }}|{{album_cover_url_small}}/g,
 			`${track.album.images[2]?.url}`,
 		)
-		.replace(/{{ song_url }}|{{song_url}}/g, track.href)
-		.replace(/{{ album_url }}|{{album_url}}/g, track.album.href)
+		.replace(/{{ song_url }}|{{song_url}}/g, track.external_urls.spotify)
+		.replace(/{{ album_url }}|{{album_url}}/g, track.album.external_urls.spotify)
 		.replace(
 			/{{ main_artist_url }}|{{main_artist_url}}/g,
 			track.artists[0]?.href,
