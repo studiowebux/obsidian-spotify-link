@@ -1,4 +1,4 @@
-# Table of Contents
+# Obsidian Spotify Link documentation - Table of Contents
 
 - Getting Started
 	- [Overview](index.md)
