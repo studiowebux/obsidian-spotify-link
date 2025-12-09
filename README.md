@@ -29,13 +29,7 @@
 
 ## Installation and Usage
 
-[Full Documentation is available here](https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link)
-
----
-
-## Screenshots
-
-[See Screenshot here](https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/features)
+[Full Documentation is available here](https://studiowebux.github.io/obsidian-spotify-link/)
 
 ---
 
