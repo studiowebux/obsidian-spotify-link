@@ -5,5 +5,3 @@
 	- [Configuration](configuration.md)
 - Core Concepts
 	- [Templates](templates.md)
-- Reference
-	- [Template Variables](templates.md)

@@ -112,6 +112,7 @@ Output: `#Artist_One #Artist_Two`
 
 - `{{ episode_name }}` - Episode title
 - `{{ episode_link }}` - Markdown link to episode
+- `{{ episode_url }}` - Episode Spotify URL (plain text)
 - `{{ description }}` - Full description
 - `{{ description[100] }}` - Truncated to 100 chars (adds `...`)
 - `{{ release_date }}` - Episode release date
@@ -124,6 +125,9 @@ Output: `#Artist_One #Artist_Two`
 - `{{ episode_cover_link_large }}` - Large cover as link
 - `{{ episode_cover_link_medium }}` - Medium cover as link
 - `{{ episode_cover_link_small }}` - Small cover as link
+- `{{ episode_cover_url_large }}` - Large cover URL (plain)
+- `{{ episode_cover_url_medium }}` - Medium cover URL
+- `{{ episode_cover_url_small }}` - Small cover URL
 
 **Show Info**
 

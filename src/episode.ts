@@ -82,6 +82,22 @@ export function getEpisodeMessage(
 			/{{ episode_cover_link_small }}|{{episode_cover_link_small}}/g,
 			`[Cover - ${episode.name}](${episode.images[2]?.url})`,
 		)
+		.replace(
+			/{{ episode_cover_url_large }}|{{episode_cover_url_large}}/g,
+			`${episode.images[0]?.url}`,
+		)
+		.replace(
+			/{{ episode_cover_url_medium }}|{{episode_cover_url_medium}}/g,
+			`${episode.images[1]?.url}`,
+		)
+		.replace(
+			/{{ episode_cover_url_small }}|{{episode_cover_url_small}}/g,
+			`${episode.images[2]?.url}`,
+		)
+		.replace(
+			/{{ episode_url }}|{{episode_url}}/g,
+			episode.external_urls.spotify,
+		)
 		.replace(/{{ release_date }}|{{release_date}}/g, episode.release_date)
 		.replace(/{{ show_name }}|{{show_name}}/g, episode.show.name)
 		.replace(/{{ publisher }}|{{publisher}}/g, episode.show.publisher)

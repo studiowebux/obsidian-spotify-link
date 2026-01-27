@@ -54,12 +54,9 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 
 ## Documentation
 
-- [Architecture](architecture.md)
 - [Configuration](configuration.md)
 - [Templates](templates.md)
-- [API Integration](api.md)
 
 ## Links
 
 - [GitHub Repository](https://github.com/studiowebux/obsidian-spotify-link)
-- [Official Documentation](https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link)

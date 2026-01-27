@@ -92,18 +92,6 @@ export default class SettingsTab extends PluginSettingTab {
 		const divDoc = containerEl.createDiv();
 
 		divDoc.createEl("h6", { text: "External resources" });
-		const list = divDoc.createEl("ul");
-		list.createEl("li").createEl("a", {
-			href:
-				"https://studiowebux.github.io/obsidian-plugins-docs/docs/spotify-link/custom-template",
-			text: "Custom Template Documentation",
-		});
-		list.createEl("li").createEl("a", {
-			href:
-				"https://github.com/studiowebux/obsidian-spotify-link/blob/main/examples/",
-			text: "Template Examples",
-		});
-
 		divDoc.createEl("p", { text: "Available variables (song):" });
 		divDoc
 			.createEl("ul")
@@ -307,8 +295,7 @@ export default class SettingsTab extends PluginSettingTab {
 		containerEl.createEl("hr");
 
 		containerEl.createEl("a", {
-			href:
-				"https://studiowebux.github.io/obsidian-plugins-docs/docs/category/plugin-spotify-link",
+			href: "https://studiowebux.github.io/obsidian-spotify-link",
 			text: "Official Plugin Documentation",
 		});
 	}
