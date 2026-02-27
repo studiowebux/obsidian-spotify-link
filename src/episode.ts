@@ -1,5 +1,5 @@
-import { CurrentlyPlayingTrack, Episode } from "./types";
-import { millisToMinutesAndSeconds, millisToSeconds, padZero } from "./utils";
+import { CurrentlyPlayingTrack, Episode, TemplateOptions } from "./types";
+import { formatSpotifyDate, millisToMinutesAndSeconds, millisToSeconds, padZero } from "./utils";
 
 export function isEpisode(data: CurrentlyPlayingTrack) {
 	return data.item.type === "episode";
@@ -23,6 +23,7 @@ export function getEpisodeMessageTimestamp(data: CurrentlyPlayingTrack) {
 export function getEpisodeMessage(
 	data: CurrentlyPlayingTrack,
 	template: string,
+	options?: TemplateOptions,
 ) {
 	if (!isEpisode(data)) throw new Error("Not an episode.");
 	const episode = data.item as Episode;
@@ -31,6 +32,8 @@ export function getEpisodeMessage(
 	const progressInMinutesAndSeconds = millisToMinutesAndSeconds(
 		data.progress_ms,
 	);
+	const defaultImageSize = options?.defaultImageSize ?? "";
+	const defaultReleaseDateFormat = options?.defaultReleaseDateFormat ?? "";
 
 	return template
 		.replace(/{{ episode_name }}|{{episode_name}}/g, episode.name)
@@ -59,16 +62,28 @@ export function getEpisodeMessage(
 			`![Audio preview url](${episode.audio_preview_url})`,
 		)
 		.replace(
-			/{{ episode_cover_large }}|{{episode_cover_large}}/g,
-			`![${episode.name}](${episode.images[0]?.url})`,
+			/{{ episode_cover_large(\|[^\s}]*)? }}|{{episode_cover_large}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${episode.name}${sizeStr}](${episode.images[0]?.url})`;
+			},
 		)
 		.replace(
-			/{{ episode_cover_medium }}|{{episode_cover_medium}}/g,
-			`![${episode.name}](${episode.images[1]?.url})`,
+			/{{ episode_cover_medium(\|[^\s}]*)? }}|{{episode_cover_medium}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${episode.name}${sizeStr}](${episode.images[1]?.url})`;
+			},
 		)
 		.replace(
-			/{{ episode_cover_small }}|{{episode_cover_small}}/g,
-			`![${episode.name}](${episode.images[2]?.url})`,
+			/{{ episode_cover_small(\|[^\s}]*)? }}|{{episode_cover_small}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${episode.name}${sizeStr}](${episode.images[2]?.url})`;
+			},
 		)
 		.replace(
 			/{{ episode_cover_link_large }}|{{episode_cover_link_large}}/g,
@@ -98,7 +113,13 @@ export function getEpisodeMessage(
 			/{{ episode_url }}|{{episode_url}}/g,
 			episode.external_urls.spotify,
 		)
-		.replace(/{{ release_date }}|{{release_date}}/g, episode.release_date)
+		.replace(
+			/{{ release_date(\|[^\s}]*)? }}|{{release_date}}/g,
+			(_match, fmtParam) => {
+				const fmt = fmtParam?.substring(1) || defaultReleaseDateFormat;
+				return formatSpotifyDate(episode.release_date, fmt);
+			},
+		)
 		.replace(/{{ show_name }}|{{show_name}}/g, episode.show.name)
 		.replace(/{{ publisher }}|{{publisher}}/g, episode.show.publisher)
 		.replace(

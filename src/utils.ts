@@ -26,3 +26,29 @@ export function isPath(str: string) {
 export function padZero(date: string | number) {
   return ("0" + date).slice(-2);
 }
+
+/**
+ * Format a Spotify release_date string using a simple token-based format.
+ *
+ * Spotify dates come in three precisions: "YYYY", "YYYY-MM", "YYYY-MM-DD".
+ * Supported tokens in the format string: YYYY, MM, DD.
+ *
+ * Returns the raw date unchanged when format is empty (backward compatible).
+ *
+ * Examples:
+ *   formatSpotifyDate("2024-03-15", "YYYY")         → "2024"
+ *   formatSpotifyDate("2024-03-15", "YYYY-MM")       → "2024-03"
+ *   formatSpotifyDate("2024-03-15", "MM/DD/YYYY")    → "03/15/2024"
+ *   formatSpotifyDate("2024-03-15", "")              → "2024-03-15"
+ */
+export function formatSpotifyDate(date: string, format: string): string {
+  if (!date || !format) return date;
+  const parts = date.split("-");
+  const year = parts[0] ?? "";
+  const month = parts[1] ?? "";
+  const day = parts[2] ?? "";
+  return format
+    .replace("YYYY", year)
+    .replace("MM", month)
+    .replace("DD", day);
+}

@@ -36,3 +36,18 @@ Artist images: {{ artist_image }}
 
 Artists
 {{ artists_formatted:  - [[:]] }}
+
+**Image dimension tests (inline override):**
+
+Cover large, no size (uses setting default): {{ album_cover_large }}
+Cover medium, fixed 200x200: {{ album_cover_medium|200x200 }}
+Cover small, width only 100: {{ album_cover_small|100 }}
+Artist image, fixed 50x50: {{ artist_image|50x50 }}
+
+**Date format tests (inline override):**
+
+Raw date (uses setting default): {{ album_release }}
+Year only: {{ album_release|YYYY }}
+Year-Month: {{ album_release|YYYY-MM }}
+Full date: {{ album_release|YYYY-MM-DD }}
+US format: {{ album_release|MM/DD/YYYY }}

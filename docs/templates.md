@@ -47,7 +47,7 @@ File contains same syntax as inline templates.
 - `{{ album }}` - Album name
 - `{{ album_link }}` - Markdown link to album
 - `{{ album_url }}` - Album Spotify URL
-- `{{ album_release }}` - Release date (YYYY-MM-DD)
+- `{{ album_release }}` - Release date, format controlled by setting or inline override (see [Date formatting](#date-formatting))
 
 **Album Covers**
 
@@ -60,6 +60,8 @@ File contains same syntax as inline templates.
 - `{{ album_cover_url_large }}` - Large cover URL (plain)
 - `{{ album_cover_url_medium }}` - Medium cover URL
 - `{{ album_cover_url_small }}` - Small cover URL
+
+Image tokens accept an optional inline size override — see [Image dimensions](#image-dimensions).
 
 **Artists**
 
@@ -115,7 +117,7 @@ Output: `#Artist_One #Artist_Two`
 - `{{ episode_url }}` - Episode Spotify URL (plain text)
 - `{{ description }}` - Full description
 - `{{ description[100] }}` - Truncated to 100 chars (adds `...`)
-- `{{ release_date }}` - Episode release date
+- `{{ release_date }}` - Release date, format controlled by setting or inline override (see [Date formatting](#date-formatting))
 
 **Episode Covers**
 
@@ -128,6 +130,8 @@ Output: `#Artist_One #Artist_Two`
 - `{{ episode_cover_url_large }}` - Large cover URL (plain)
 - `{{ episode_cover_url_medium }}` - Medium cover URL
 - `{{ episode_cover_url_small }}` - Small cover URL
+
+Image tokens accept an optional inline size override — see [Image dimensions](#image-dimensions).
 
 **Show Info**
 
@@ -263,3 +267,37 @@ Spotify provides three sizes (indices 0, 1, 2):
 - `[0]` - Large (typically 640x640)
 - `[1]` - Medium (typically 300x300)
 - `[2]` - Small (typically 64x64)
+
+### Image Dimensions
+
+By default Obsidian renders images at full available width. You can constrain the size two ways:
+
+**Global default** — set *Default image size* in plugin settings (e.g. `200x200`). Applies to every image token unless overridden.
+
+**Inline override** — append `|WxH` or `|W` directly to the token:
+
+```
+{{ album_cover_medium|100x100 }}
+{{ album_cover_large|300 }}
+{{ artist_image|50x50 }}
+{{ episode_cover_medium|150x150 }}
+```
+
+Inline override takes precedence over the setting. The value is passed directly to Obsidian's image syntax (`![alt|WxH](url)`), so any value Obsidian accepts works here.
+
+### Date Formatting
+
+`{{ album_release }}` (tracks) and `{{ release_date }}` (episodes) output Spotify's raw date by default (`YYYY-MM-DD`, `YYYY-MM`, or `YYYY` depending on precision).
+
+**Global default** — set *Default release date format* in plugin settings. Tokens: `YYYY`, `MM`, `DD`.
+
+**Inline override** — append `|FORMAT` to the token:
+
+```
+{{ album_release|YYYY }}
+{{ album_release|YYYY-MM }}
+{{ album_release|MM/DD/YYYY }}
+{{ release_date|YYYY }}
+```
+
+Inline override takes precedence over the setting. Leaving both empty preserves the original Spotify date string (fully backward compatible).

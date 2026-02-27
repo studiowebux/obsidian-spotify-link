@@ -12,6 +12,19 @@ export type SpotifyLinkSettings = {
 	overwrite: boolean;
 	autoOpen: boolean;
 	appendArtistNames: boolean;
+	defaultImageSize: string;
+	defaultReleaseDateFormat: string;
+};
+
+/**
+ * Optional per-call overrides forwarded from settings into template processing.
+ * Both fields default to "" which preserves backward-compatible behaviour:
+ *   defaultImageSize=""      → no size attribute added to images
+ *   defaultReleaseDateFormat="" → raw Spotify date string is used as-is
+ */
+export type TemplateOptions = {
+	defaultImageSize?: string;
+	defaultReleaseDateFormat?: string;
 };
 
 //

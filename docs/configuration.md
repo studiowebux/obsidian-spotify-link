@@ -93,6 +93,18 @@ Path resolution attempts:
 - Default: `false`
 - Format: `TrackName-Artist1_Artist2.md`
 
+**Default image size**
+- Rendered size for all cover and artist image tokens
+- Default: `""` (Obsidian renders at full width)
+- Format: `WxH` (e.g. `200x200`) or width only (e.g. `200`)
+- Can be overridden per-token: `{{ album_cover_medium|100x100 }}`
+
+**Default release date format**
+- Output format for `{{ album_release }}` and `{{ release_date }}`
+- Default: `""` (raw Spotify date, e.g. `2024-03-15`)
+- Tokens: `YYYY`, `MM`, `DD` (e.g. `YYYY` → `2024`, `MM/YYYY` → `03/2024`)
+- Can be overridden per-token: `{{ album_release|YYYY }}`
+
 ### Context Menu
 
 Array of menu items for right-click integration:
@@ -142,7 +154,9 @@ Token persistence across Obsidian restarts via localStorage.
   defaultDestination: "",
   overwrite: false,
   autoOpen: false,
-  appendArtistNames: false
+  appendArtistNames: false,
+  defaultImageSize: "",
+  defaultReleaseDateFormat: ""
 }
 ```
 

@@ -1,5 +1,5 @@
-import { millisToMinutesAndSeconds, padZero } from "./utils";
-import { Artist, CurrentlyPlayingTrack, Track, TrackType } from "./types";
+import { formatSpotifyDate, millisToMinutesAndSeconds, padZero } from "./utils";
+import { Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types";
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
 	return data.currently_playing_type;
@@ -32,9 +32,12 @@ export function getTrackMessage(
 	data: CurrentlyPlayingTrack,
 	artists: Artist[],
 	template: string,
+	options?: TemplateOptions,
 ) {
 	if (!isTrack(data)) throw new Error("Not a track.");
 	const track = data.item as Track;
+	const defaultImageSize = options?.defaultImageSize ?? "";
+	const defaultReleaseDateFormat = options?.defaultReleaseDateFormat ?? "";
 	return template
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
 		.replace(
@@ -49,9 +52,9 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ artists_formatted(:.*?)?(:.*?)? }}|{{artists_formatted(:.*?)?(:.*?)?}}/g,
-			(_match, ...options) => {
-				const matches = options
-					.slice(0, options.length - 2)
+			(_match, ...opts) => {
+				const matches = opts
+					.slice(0, opts.length - 2)
 					.filter((m) => m !== undefined);
 
 				const prefix = matches[0]?.substring(1) || "";
@@ -75,20 +78,35 @@ export function getTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_release }}|{{album_release}}/g,
-			track.album.release_date,
+			/{{ album_release(\|[^\s}]*)? }}|{{album_release}}/g,
+			(_match, fmtParam) => {
+				const fmt = fmtParam?.substring(1) || defaultReleaseDateFormat;
+				return formatSpotifyDate(track.album.release_date, fmt);
+			},
 		)
 		.replace(
-			/{{ album_cover_large }}|{{album_cover_large}}/g,
-			`![${track.album.name}](${track.album.images[0]?.url})`,
+			/{{ album_cover_large(\|[^\s}]*)? }}|{{album_cover_large}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[0]?.url})`;
+			},
 		)
 		.replace(
-			/{{ album_cover_medium }}|{{album_cover_medium}}/g,
-			`![${track.album.name}](${track.album.images[1]?.url})`,
+			/{{ album_cover_medium(\|[^\s}]*)? }}|{{album_cover_medium}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[1]?.url})`;
+			},
 		)
 		.replace(
-			/{{ album_cover_small }}|{{album_cover_small}}/g,
-			`![${track.album.name}](${track.album.images[2]?.url})`,
+			/{{ album_cover_small(\|[^\s}]*)? }}|{{album_cover_small}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[2]?.url})`;
+			},
 		)
 		.replace(
 			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
@@ -212,10 +230,14 @@ export function getTrackMessage(
 				: artists[0].popularity.toString(),
 		)
 		.replace(
-			/{{ artist_image }}|{{artist_image}}/g,
-			artists
-				?.map((artist) => `![${artist.name}](${artist.images[0]?.url})`)
-				.join(", "),
+			/{{ artist_image(\|[^\s}]*)? }}|{{artist_image}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return artists
+					?.map((artist) => `![${artist.name}${sizeStr}](${artist.images[0]?.url})`)
+					.join(", ");
+			},
 		)
 		.replace(
 			/{{ artist_name }}|{{artist_name}}/g,
@@ -256,8 +278,11 @@ export function getRecentlyPlayedTrackMessage(
 	},
 	artists: Artist[],
 	template: string,
+	options?: TemplateOptions,
 ) {
 	const track = data.track as Track;
+	const defaultImageSize = options?.defaultImageSize ?? "";
+	const defaultReleaseDateFormat = options?.defaultReleaseDateFormat ?? "";
 	return template
 		.replace(/{{ song_name }}|{{song_name}}/g, track.name)
 		.replace(
@@ -280,9 +305,9 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ artists_formatted(:.*?)?(:.*?)? }}|{{artists_formatted(:.*?)?(:.*?)?}}/g,
-			(_match, ...options) => {
-				const matches = options
-					.slice(0, options.length - 2)
+			(_match, ...opts) => {
+				const matches = opts
+					.slice(0, opts.length - 2)
 					.filter((m) => m !== undefined);
 
 				const prefix = matches[0]?.substring(1) || "";
@@ -306,20 +331,35 @@ export function getRecentlyPlayedTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_release }}|{{album_release}}/g,
-			track.album.release_date,
+			/{{ album_release(\|[^\s}]*)? }}|{{album_release}}/g,
+			(_match, fmtParam) => {
+				const fmt = fmtParam?.substring(1) || defaultReleaseDateFormat;
+				return formatSpotifyDate(track.album.release_date, fmt);
+			},
 		)
 		.replace(
-			/{{ album_cover_large }}|{{album_cover_large}}/g,
-			`![${track.album.name}](${track.album.images[0]?.url})`,
+			/{{ album_cover_large(\|[^\s}]*)? }}|{{album_cover_large}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[0]?.url})`;
+			},
 		)
 		.replace(
-			/{{ album_cover_medium }}|{{album_cover_medium}}/g,
-			`![${track.album.name}](${track.album.images[1]?.url})`,
+			/{{ album_cover_medium(\|[^\s}]*)? }}|{{album_cover_medium}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[1]?.url})`;
+			},
 		)
 		.replace(
-			/{{ album_cover_small }}|{{album_cover_small}}/g,
-			`![${track.album.name}](${track.album.images[2]?.url})`,
+			/{{ album_cover_small(\|[^\s}]*)? }}|{{album_cover_small}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return `![${track.album.name}${sizeStr}](${track.album.images[2]?.url})`;
+			},
 		)
 		.replace(
 			/{{ album_cover_link_large }}|{{album_cover_link_large}}/g,
@@ -443,10 +483,14 @@ export function getRecentlyPlayedTrackMessage(
 				: artists[0].popularity.toString(),
 		)
 		.replace(
-			/{{ artist_image }}|{{artist_image}}/g,
-			artists
-				?.map((artist) => `![${artist.name}](${artist.images[0]?.url})`)
-				.join(", "),
+			/{{ artist_image(\|[^\s}]*)? }}|{{artist_image}}/g,
+			(_match, sizeParam) => {
+				const size = sizeParam?.substring(1) || defaultImageSize;
+				const sizeStr = size ? `|${size}` : "";
+				return artists
+					?.map((artist) => `![${artist.name}${sizeStr}](${artist.images[0]?.url})`)
+					.join(", ");
+			},
 		)
 		.replace(
 			/{{ artist_name }}|{{artist_name}}/g,

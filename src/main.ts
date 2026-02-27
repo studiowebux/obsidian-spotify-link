@@ -190,6 +190,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 				await this.loadOrGetTemplate(
 					this.settings.templates[template_index],
 				),
+				this.settings,
 			)}\n\n`;
 		} else {
 			track = await getCurrentlyPlayingTrack(
@@ -214,6 +215,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 				await this.loadOrGetTemplate(
 					this.settings.templates[template_index],
 				),
+				this.settings,
 			)}\n\n`;
 		}
 
@@ -316,6 +318,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					await this.loadOrGetTemplate(this.settings.templates[1]),
 					this.settings.spotifyClientId,
 					this.settings.spotifyClientSecret,
+					this.settings,
 				);
 			},
 		});
@@ -342,6 +345,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					await this.loadOrGetTemplate(this.settings.templates[0]),
 					this.settings.spotifyClientId,
 					this.settings.spotifyClientSecret,
+					this.settings,
 				);
 			},
 		});

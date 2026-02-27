@@ -40,4 +40,6 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 	overwrite: false,
 	autoOpen: false,
 	appendArtistNames: false,
+	defaultImageSize: "",
+	defaultReleaseDateFormat: "",
 };

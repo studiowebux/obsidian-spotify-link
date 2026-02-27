@@ -4,6 +4,7 @@ import {
   getCurrentlyPlayingTrackAsString,
 } from "./api";
 import { processCurrentlyPlayingTrack } from "./output";
+import { TemplateOptions } from "./types";
 
 export async function handleEditor(
   editor: Editor,
@@ -32,12 +33,13 @@ export async function handleTemplateEditor(
   template: string,
   clientId: string,
   clientSecret: string,
+  options?: TemplateOptions,
 ) {
   try {
     const track = await getCurrentlyPlayingTrack(clientId, clientSecret);
     if (editor) {
       editor.replaceSelection(
-        `${await processCurrentlyPlayingTrack(clientId, clientSecret, track, template)}\n\n`,
+        `${await processCurrentlyPlayingTrack(clientId, clientSecret, track, template, options)}\n\n`,
       );
     }
   } catch (e) {

@@ -6,7 +6,7 @@ import {
 	getTrackMessageTimestamp,
 	getTrackType,
 } from "./track";
-import { CurrentlyPlayingTrack, RecentlyPlayed, Track } from "./types";
+import { CurrentlyPlayingTrack, RecentlyPlayed, TemplateOptions, Track } from "./types";
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -31,16 +31,17 @@ export async function processCurrentlyPlayingTrack(
 	clientSecret: string,
 	data: CurrentlyPlayingTrack,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n{{ timestamp }}`,
+	options?: TemplateOptions,
 ): Promise<string> {
 	if (data && data.is_playing) {
 		if (getTrackType(data) === "track") {
 			const artists = (data.item as Track).artists.map((artist) =>
 				getArtist(clientId, clientSecret, artist.id),
 			);
-			return getTrackMessage(data, await Promise.all(artists), template);
+			return getTrackMessage(data, await Promise.all(artists), template, options);
 		}
 		if (getTrackType(data) === "episode") {
-			return getEpisodeMessage(data, template);
+			return getEpisodeMessage(data, template, options);
 		}
 
 		throw new Error(
@@ -55,6 +56,7 @@ export async function processRecentlyPlayedTracks(
 	clientSecret: string,
 	data: RecentlyPlayed | null,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }} @ {{ played_at }}`,
+	options?: TemplateOptions,
 ): Promise<string> {
 	const messages: string[] = [];
 	if (data && data.items) {
@@ -67,6 +69,7 @@ export async function processRecentlyPlayedTracks(
 					item,
 					await Promise.all(artists),
 					template,
+					options,
 				),
 			);
 		}

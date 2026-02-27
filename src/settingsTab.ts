@@ -274,6 +274,36 @@ export default class SettingsTab extends PluginSettingTab {
 				});
 			});
 
+		new Setting(containerEl)
+			.setName("Default image size")
+			.setDesc(
+				"Default rendered size for cover and artist images (e.g. 200x200 or 200). Leave empty to let Obsidian use full width. Can be overridden per-token with {{ album_cover_medium|100x100 }}.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. 200x200")
+					.setValue(this.plugin.settings.defaultImageSize)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultImageSize = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Default release date format")
+			.setDesc(
+				"Format for {{ album_release }} and {{ release_date }}. Tokens: YYYY, MM, DD. Leave empty to use the raw Spotify date (YYYY-MM-DD). Can be overridden per-token with {{ album_release|YYYY }}.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. YYYY")
+					.setValue(this.plugin.settings.defaultReleaseDateFormat)
+					.onChange(async (value) => {
+						this.plugin.settings.defaultReleaseDateFormat = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
 		containerEl.createEl("hr");
 
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
