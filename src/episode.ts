@@ -142,9 +142,9 @@ export function getEpisodeMessage(
 		)
 		.replace(
 			/{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))?}}/g,
-			(_match, ...options) => {
-				const matches = options
-					.slice(0, options.length - 2)
+			(_match, ...tsOpts) => {
+				const matches = tsOpts
+					.slice(0, tsOpts.length - 2)
 					.filter((m) => m !== undefined);
 
 				let timestamp = "";
