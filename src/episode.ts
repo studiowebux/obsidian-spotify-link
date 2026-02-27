@@ -62,26 +62,29 @@ export function getEpisodeMessage(
 			`![Audio preview url](${episode.audio_preview_url})`,
 		)
 		.replace(
-			/{{ episode_cover_large(\|[^\s}]*)? }}|{{episode_cover_large}}/g,
+			/{{ episode_cover_large(\\?\|[^\s}]*)? }}|{{episode_cover_large}}/g,
 			(_match, sizeParam) => {
-				const size = sizeParam?.substring(1) || defaultImageSize;
-				const sizeStr = size ? `|${size}` : "";
+				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+				const sizeStr = size ? `${sep}${size}` : "";
 				return `![${episode.name}${sizeStr}](${episode.images[0]?.url})`;
 			},
 		)
 		.replace(
-			/{{ episode_cover_medium(\|[^\s}]*)? }}|{{episode_cover_medium}}/g,
+			/{{ episode_cover_medium(\\?\|[^\s}]*)? }}|{{episode_cover_medium}}/g,
 			(_match, sizeParam) => {
-				const size = sizeParam?.substring(1) || defaultImageSize;
-				const sizeStr = size ? `|${size}` : "";
+				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+				const sizeStr = size ? `${sep}${size}` : "";
 				return `![${episode.name}${sizeStr}](${episode.images[1]?.url})`;
 			},
 		)
 		.replace(
-			/{{ episode_cover_small(\|[^\s}]*)? }}|{{episode_cover_small}}/g,
+			/{{ episode_cover_small(\\?\|[^\s}]*)? }}|{{episode_cover_small}}/g,
 			(_match, sizeParam) => {
-				const size = sizeParam?.substring(1) || defaultImageSize;
-				const sizeStr = size ? `|${size}` : "";
+				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+				const sizeStr = size ? `${sep}${size}` : "";
 				return `![${episode.name}${sizeStr}](${episode.images[2]?.url})`;
 			},
 		)
@@ -114,9 +117,9 @@ export function getEpisodeMessage(
 			episode.external_urls.spotify,
 		)
 		.replace(
-			/{{ release_date(\|[^\s}]*)? }}|{{release_date}}/g,
+			/{{ release_date(\\?\|[^\s}]*)? }}|{{release_date}}/g,
 			(_match, fmtParam) => {
-				const fmt = fmtParam?.substring(1) || defaultReleaseDateFormat;
+				const fmt = fmtParam?.replace(/^\\?\|/, '') || defaultReleaseDateFormat;
 				return formatSpotifyDate(episode.release_date, fmt);
 			},
 		)

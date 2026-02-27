@@ -51,3 +51,14 @@ Year only: {{ album_release|YYYY }}
 Year-Month: {{ album_release|YYYY-MM }}
 Full date: {{ album_release|YYYY-MM-DD }}
 US format: {{ album_release|MM/DD/YYYY }}
+
+**Table context — use `\|` (escaped pipe) inside Markdown tables:**
+
+In Markdown tables `|` separates columns, so the inline override pipe must be escaped with `\|`.
+
+| Token | Syntax | Result |
+| ----- | ------ | ------ |
+| album_cover_medium | `{{ album_cover_medium\|200x200 }}` | {{ album_cover_medium\|200x200 }} |
+| album_cover_large | `{{ album_cover_large\|100x100 }}` | {{ album_cover_large\|100x100 }} |
+| album_release | `{{ album_release\|YYYY }}` | {{ album_release\|YYYY }} |
+| artist_image | `{{ artist_image\|50x50 }}` | {{ artist_image\|50x50 }} |

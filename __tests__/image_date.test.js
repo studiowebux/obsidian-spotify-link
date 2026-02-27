@@ -30,33 +30,36 @@ function processTemplate(template, track, options = {}) {
 
   return template
     .replace(
-      /{{ album_release(\|[^\s}]*)? }}|{{album_release}}/g,
+      /{{ album_release(\\?\|[^\s}]*)? }}|{{album_release}}/g,
       (_match, fmtParam) => {
-        const fmt = fmtParam?.substring(1) || defaultReleaseDateFormat;
+        const fmt = fmtParam?.replace(/^\\?\|/, '') || defaultReleaseDateFormat;
         return formatSpotifyDate(track.album.release_date, fmt);
       },
     )
     .replace(
-      /{{ album_cover_large(\|[^\s}]*)? }}|{{album_cover_large}}/g,
+      /{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large}}/g,
       (_match, sizeParam) => {
-        const size = sizeParam?.substring(1) || defaultImageSize;
-        const sizeStr = size ? `|${size}` : "";
+        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+        const sizeStr = size ? `${sep}${size}` : "";
         return `![${track.album.name}${sizeStr}](${track.album.images[0]?.url})`;
       },
     )
     .replace(
-      /{{ album_cover_medium(\|[^\s}]*)? }}|{{album_cover_medium}}/g,
+      /{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium}}/g,
       (_match, sizeParam) => {
-        const size = sizeParam?.substring(1) || defaultImageSize;
-        const sizeStr = size ? `|${size}` : "";
+        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+        const sizeStr = size ? `${sep}${size}` : "";
         return `![${track.album.name}${sizeStr}](${track.album.images[1]?.url})`;
       },
     )
     .replace(
-      /{{ album_cover_small(\|[^\s}]*)? }}|{{album_cover_small}}/g,
+      /{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small}}/g,
       (_match, sizeParam) => {
-        const size = sizeParam?.substring(1) || defaultImageSize;
-        const sizeStr = size ? `|${size}` : "";
+        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
+        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
+        const sizeStr = size ? `${sep}${size}` : "";
         return `![${track.album.name}${sizeStr}](${track.album.images[2]?.url})`;
       },
     );
@@ -256,6 +259,49 @@ assert(
 assert(
   "inline format override takes precedence over default setting",
   processTemplate("{{ album_release|YYYY }}", TRACK, { defaultReleaseDateFormat: "YYYY-MM-DD" }),
+  "2024",
+);
+
+// ---------------------------------------------------------------------------
+// Table context — escaped pipe \|
+// In Markdown tables | is the column separator, so users must write \|
+// ---------------------------------------------------------------------------
+
+console.log("\nTable context — escaped pipe \\|");
+
+assert(
+  "{{ album_cover_medium\\|100x100 }} escaped pipe (table context)",
+  processTemplate("{{ album_cover_medium\\|100x100 }}", TRACK, {}),
+  "![Test Album\\|100x100](https://example.com/medium.jpg)",
+);
+assert(
+  "{{ album_cover_large\\|200x200 }} escaped pipe uses correct image slot",
+  processTemplate("{{ album_cover_large\\|200x200 }}", TRACK, {}),
+  "![Test Album\\|200x200](https://example.com/large.jpg)",
+);
+assert(
+  "{{ album_cover_small\\|64 }} escaped pipe width-only",
+  processTemplate("{{ album_cover_small\\|64 }}", TRACK, {}),
+  "![Test Album\\|64](https://example.com/small.jpg)",
+);
+assert(
+  "escaped pipe override takes precedence over default setting",
+  processTemplate("{{ album_cover_medium\\|50x50 }}", TRACK, { defaultImageSize: "200x200" }),
+  "![Test Album\\|50x50](https://example.com/medium.jpg)",
+);
+assert(
+  "{{ album_release\\|YYYY }} escaped pipe date format (table context)",
+  processTemplate("{{ album_release\\|YYYY }}", TRACK, {}),
+  "2024",
+);
+assert(
+  "{{ album_release\\|MM/DD/YYYY }} escaped pipe US date format",
+  processTemplate("{{ album_release\\|MM/DD/YYYY }}", TRACK, {}),
+  "03/15/2024",
+);
+assert(
+  "escaped pipe date override takes precedence over default setting",
+  processTemplate("{{ album_release\\|YYYY }}", TRACK, { defaultReleaseDateFormat: "YYYY-MM-DD" }),
   "2024",
 );
 

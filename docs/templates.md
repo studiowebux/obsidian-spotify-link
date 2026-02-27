@@ -285,6 +285,18 @@ By default Obsidian renders images at full available width. You can constrain th
 
 Inline override takes precedence over the setting. The value is passed directly to Obsidian's image syntax (`![alt|WxH](url)`), so any value Obsidian accepts works here.
 
+**Inside Markdown tables** — `|` is the column separator in Markdown, so escape it with `\|`:
+
+```
+| Cover | Date |
+| ----- | ---- |
+| {{ album_cover_medium\|100x100 }} | {{ album_release\|YYYY }} |
+```
+
+The plugin detects the `\|` and preserves it in the generated output (`![alt\|WxH](url)`), keeping the table structure intact.
+
+> **Note:** the *Global default* image size setting does not carry the table context — it always outputs a bare `|`. If you need a sized image inside a table, use the inline `\|` override explicitly.
+
 ### Date Formatting
 
 `{{ album_release }}` (tracks) and `{{ release_date }}` (episodes) output Spotify's raw date by default (`YYYY-MM-DD`, `YYYY-MM`, or `YYYY` depending on precision).
@@ -300,4 +312,13 @@ Inline override takes precedence over the setting. The value is passed directly 
 {{ release_date|YYYY }}
 ```
 
+**Inside Markdown tables** — use `\|` instead of `|`:
+
+```
+{{ album_release\|YYYY }}
+{{ release_date\|YYYY-MM }}
+```
+
 Inline override takes precedence over the setting. Leaving both empty preserves the original Spotify date string (fully backward compatible).
+
+> **Note:** date tokens produce plain text output (no `|` character), so the *Global default* date format works fine inside tables without any special handling.
