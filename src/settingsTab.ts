@@ -24,20 +24,28 @@ export default class SettingsTab extends PluginSettingTab {
 			href: "https://developer.spotify.com/dashboard/",
 			text: "Spotify Developer",
 		});
-		div.createEl("ol")
-			.createEl("li", { text: "Create an App" })
-			.createEl("li", { text: "Click Settings" })
-			.createEl("li", { text: "Copy the Client Id and Secret" })
-			.createEl("li", {
-				text: "Set the Redirect URI to : obsidian://spotify-auth/",
-			})
-			.createEl("li", {
-				text:
-					"Select the Spotify icon located in Obsidian's left sidebar to connect.",
-			});
+		const ol = div.createEl("ol");
+		ol.createEl("li", { text: "Create an App" });
+		ol.createEl("li", { text: "Click Settings" });
+		ol.createEl("li", { text: "Copy the Client Id and Secret" });
+		ol.createEl("li", {
+			text: "Set the Redirect URI to : obsidian://spotify-auth/",
+		});
+		ol.createEl("li", {
+			text:
+				"Select the Spotify icon located in Obsidian's left sidebar to connect.",
+		});
+
+		const reconnectDiv = div.createDiv();
+		reconnectDiv.createEl("h6", { text: "Reconnecting / Rotated credentials" });
+		reconnectDiv.createEl("p", {
+			text:
+				"After updating your Client ID or Secret (e.g. after rotating keys), you must re-authenticate by clicking the Spotify icon in Obsidian's left sidebar. Saving new credentials here does not automatically reconnect. The status bar at the bottom shows your current connection state.",
+		});
+
 		div.createEl("p", {
 			text:
-				"NOTICE: The id and secret will be stored unencrypted on your local device. If you sync your data to a public source, the id and secret will be shown as-is.",
+				"NOTICE: The id and secret will be stored unencrypted on your local device. If you sync your data to a public source, the id and secret will be shown as-is. Use the eye icon next to each field to verify your values.",
 		});
 
 		//
@@ -54,6 +62,20 @@ export default class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 				text.inputEl.setAttribute("type", "password");
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("eye")
+					.setTooltip("Toggle visibility")
+					.onClick(() => {
+						const input = btn.extraSettingsEl.parentElement?.querySelector(
+							"input",
+						) as HTMLInputElement | null;
+						if (input) {
+							const isHidden = input.type === "password";
+							input.type = isHidden ? "text" : "password";
+							btn.setIcon(isHidden ? "eye-off" : "eye");
+						}
+					});
 			});
 		new Setting(containerEl)
 			.setName("Spotify Client Secret")
@@ -66,6 +88,20 @@ export default class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 				text.inputEl.setAttribute("type", "password");
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("eye")
+					.setTooltip("Toggle visibility")
+					.onClick(() => {
+						const input = btn.extraSettingsEl.parentElement?.querySelector(
+							"input",
+						) as HTMLInputElement | null;
+						if (input) {
+							const isHidden = input.type === "password";
+							input.type = isHidden ? "text" : "password";
+							btn.setIcon(isHidden ? "eye-off" : "eye");
+						}
+					});
 			});
 		new Setting(containerEl)
 			.setName("Spotify State")
