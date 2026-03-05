@@ -114,6 +114,20 @@ export default class SettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					});
 				text.inputEl.setAttribute("type", "password");
+			})
+			.addExtraButton((btn) => {
+				btn.setIcon("eye")
+					.setTooltip("Toggle visibility")
+					.onClick(() => {
+						const input = btn.extraSettingsEl.parentElement?.querySelector(
+							"input",
+						) as HTMLInputElement | null;
+						if (input) {
+							const isHidden = input.type === "password";
+							input.type = isHidden ? "text" : "password";
+							btn.setIcon(isHidden ? "eye-off" : "eye");
+						}
+					});
 			});
 		new Setting(containerEl)
 			.setName("Spotify Redirect URI")
