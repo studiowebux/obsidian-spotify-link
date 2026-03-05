@@ -5,3 +5,4 @@
 	- [Configuration](configuration.md)
 - Core Concepts
 	- [Templates](templates.md)
+	- [Community Examples](examples.md)
