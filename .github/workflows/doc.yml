@@ -25,6 +25,9 @@ jobs:
         id: build
         run: minimaldoc build --base-url https://studiowebux.github.io/obsidian-spotify-link/ --description "Obsidian plugin that integrates Spotify API to insert currently playing tracks and podcasts into notes using customizable templates." --title "Obsidian Spotify Link" --llms --output ./output ./docs
 
+      - name: Copy static assets
+        run: cp -r ./docs/images ./output/images
+
       - name: Upload static files as artifact
         id: deployment
         uses: actions/upload-pages-artifact@v3 # or specific "vX.X.X" version tag for this action
