@@ -160,6 +160,18 @@ function processTemplate(template, track, artists, options = {}) {
         : artists[0].popularity.toString(),
     )
     .replace(
+      /{{ artist_image_link }}|{{artist_image_link}}/g,
+      artists
+        ?.map((artist) => `[${artist.name}](${artist.images[0]?.url})`)
+        .join(", "),
+    )
+    .replace(
+      /{{ artist_image_url }}|{{artist_image_url}}/g,
+      artists
+        ?.map((artist) => `${artist.images[0]?.url}`)
+        .join(", "),
+    )
+    .replace(
       /{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image(\\?\|[^\s}]*)?}}/g,
       (_match, p1, p2) => {
         const sizeParam = p1 ?? p2;
@@ -571,6 +583,58 @@ assertBothVariants(
 );
 
 // ---------------------------------------------------------------------------
+// Artist image link — no ! prefix
+// ---------------------------------------------------------------------------
+
+console.log("\nArtist image link — no ! prefix");
+
+assertBothVariants(
+  "artist_image_link",
+  "{{ artist_image_link }}",
+  "{{artist_image_link}}",
+  "[Luna Wave](https://i.scdn.co/image/artist1), [Neon Drift](https://i.scdn.co/image/artist2)",
+);
+
+// ---------------------------------------------------------------------------
+// Artist image URL — raw URL only
+// ---------------------------------------------------------------------------
+
+console.log("\nArtist image URL — raw URL");
+
+assertBothVariants(
+  "artist_image_url",
+  "{{ artist_image_url }}",
+  "{{artist_image_url}}",
+  "https://i.scdn.co/image/artist1, https://i.scdn.co/image/artist2",
+);
+
+// ---------------------------------------------------------------------------
+// Artist image vs artist_image_link — no regex collision
+// ---------------------------------------------------------------------------
+
+console.log("\nArtist image vs artist_image_link — no regex collision");
+
+assert(
+  "{{ artist_image|100 }} and {{ artist_image_link }} in same template",
+  processTemplate(
+    "img: {{ artist_image|100 }} link: {{ artist_image_link }}",
+    TRACK,
+    ARTISTS,
+  ),
+  "img: ![Luna Wave|100](https://i.scdn.co/image/artist1), ![Neon Drift|100](https://i.scdn.co/image/artist2) link: [Luna Wave](https://i.scdn.co/image/artist1), [Neon Drift](https://i.scdn.co/image/artist2)",
+);
+
+assert(
+  "{{artist_image}} and {{artist_image_url}} in same template",
+  processTemplate(
+    "img: {{artist_image}} url: {{artist_image_url}}",
+    TRACK,
+    ARTISTS,
+  ),
+  "img: ![Luna Wave](https://i.scdn.co/image/artist1), ![Neon Drift](https://i.scdn.co/image/artist2) url: https://i.scdn.co/image/artist1, https://i.scdn.co/image/artist2",
+);
+
+// ---------------------------------------------------------------------------
 // Genres, followers, popularity
 // ---------------------------------------------------------------------------
 
@@ -706,6 +770,8 @@ const FULL_SPACED = [
   "Followers: {{ followers }}",
   "Popularity: {{ popularity }}",
   "Artist Image: {{ artist_image }}",
+  "Artist Image Link: {{ artist_image_link }}",
+  "Artist Image URL: {{ artist_image_url }}",
   "Artist Name: {{ artist_name }}",
 ].join("\n");
 
@@ -766,6 +832,8 @@ const FULL_NOSPACE = [
   "Followers: {{followers}}",
   "Popularity: {{popularity}}",
   "Artist Image: {{artist_image}}",
+  "Artist Image Link: {{artist_image_link}}",
+  "Artist Image URL: {{artist_image_url}}",
   "Artist Name: {{artist_name}}",
 ].join("\n");
 
@@ -795,10 +863,66 @@ assert(
 );
 
 // ---------------------------------------------------------------------------
+// Generated markdown output — visual inspection
+// ---------------------------------------------------------------------------
+
+console.log("\n=== Generated Markdown Output ===\n");
+
+const VISUAL_TEMPLATE = [
+  "---",
+  'song: "{{ song_name }}"',
+  'image: "{{ artist_image_url }}"',
+  "---",
+  "",
+  "# {{ song_name }}",
+  "",
+  "**Link:** {{ song_link }}",
+  "**Artists:** {{ artists }}",
+  "**Album:** {{ album_link }}",
+  "**Release:** {{ album_release }}",
+  "",
+  "## Album Covers",
+  "",
+  "| Type | Image | Link | URL |",
+  "| ---- | ----- | ---- | --- |",
+  "| Large | {{ album_cover_large }} | {{ album_cover_link_large }} | {{ album_cover_url_large }} |",
+  "| Medium | {{ album_cover_medium }} | {{ album_cover_link_medium }} | {{ album_cover_url_medium }} |",
+  "| Small | {{ album_cover_small }} | {{ album_cover_link_small }} | {{ album_cover_url_small }} |",
+  "",
+  "## Artist Images",
+  "",
+  "| Type | Output |",
+  "| ---- | ------ |",
+  "| Image (embed) | {{ artist_image }} |",
+  "| Link (no !) | {{ artist_image_link }} |",
+  "| URL (plain) | {{ artist_image_url }} |",
+  "",
+  "## Sized Images",
+  "",
+  "| Token | Output |",
+  "| ----- | ------ |",
+  "| album_cover_medium\\|200x200 | {{ album_cover_medium|200x200 }} |",
+  "| artist_image\\|100 | {{ artist_image|100 }} |",
+  "",
+  "## Metadata",
+  "",
+  "- **Genres:** {{ genres }}",
+  "- **Genres (hashtag):** {{ genres_hashtag }}",
+  "- **Followers:** {{ followers }}",
+  "- **Popularity:** {{ popularity }}",
+  "- **Song URL:** {{ song_url }}",
+  "- **Album URL:** {{ album_url }}",
+].join("\n");
+
+const visualResult = processTemplate(VISUAL_TEMPLATE, TRACK, ARTISTS);
+console.log(visualResult);
+console.log("\n=== End Generated Markdown ===\n");
+
+// ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 
-console.log(`\n${passed + failed} tests: ${passed} passed, ${failed} failed\n`);
+console.log(`${passed + failed} tests: ${passed} passed, ${failed} failed\n`);
 if (failed > 0) {
   if (typeof Deno !== "undefined") Deno.exit(1);
   else process.exit(1);

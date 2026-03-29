@@ -94,7 +94,9 @@ Output: `#Artist_One #Artist_Two`
 
 - `{{ followers }}` - Follower count (single: number, multiple: "Name: count")
 - `{{ popularity }}` - Popularity score 0-100
-- `{{ artist_image }}` - Artist images as markdown (accepts inline size override, see [Image dimensions](#image-dimensions))
+- `{{ artist_image }}` - Artist images as markdown image (accepts inline size override, see [Image dimensions](#image-dimensions))
+- `{{ artist_image_link }}` - Artist images as markdown link (no `!` prefix)
+- `{{ artist_image_url }}` - Artist image URLs (plain text)
 - `{{ genres }}` - Comma-separated genres
 - `{{ genres_array }}` - Quoted genre array: `"genre1", "genre2"`
 - `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`

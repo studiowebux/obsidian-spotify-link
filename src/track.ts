@@ -237,6 +237,18 @@ export function getTrackMessage(
 				: artists[0].popularity.toString(),
 		)
 		.replace(
+			/{{ artist_image_link }}|{{artist_image_link}}/g,
+			artists
+				?.map((artist) => `[${artist.name}](${artist.images[0]?.url})`)
+				.join(", "),
+		)
+		.replace(
+			/{{ artist_image_url }}|{{artist_image_url}}/g,
+			artists
+				?.map((artist) => `${artist.images[0]?.url}`)
+				.join(", "),
+		)
+		.replace(
 			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image(\\?\|[^\s}]*)?}}/g,
 			(_match, p1, p2) => {
 				const sizeParam = p1 ?? p2;
@@ -497,6 +509,18 @@ export function getRecentlyPlayedTrackMessage(
 					)
 					.join(", ")
 				: artists[0].popularity.toString(),
+		)
+		.replace(
+			/{{ artist_image_link }}|{{artist_image_link}}/g,
+			artists
+				?.map((artist) => `[${artist.name}](${artist.images[0]?.url})`)
+				.join(", "),
+		)
+		.replace(
+			/{{ artist_image_url }}|{{artist_image_url}}/g,
+			artists
+				?.map((artist) => `${artist.images[0]?.url}`)
+				.join(", "),
 		)
 		.replace(
 			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image(\\?\|[^\s}]*)?}}/g,
