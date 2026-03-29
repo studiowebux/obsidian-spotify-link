@@ -47,7 +47,7 @@ export function getTrackMessage(
 			}](${track.external_urls.spotify})`,
 		)
 		.replace(
-			/{{ artists }}|{{artist}}/g,
+			/{{ artists }}|{{artists}}/g,
 			track.artists.map((a) => a.name).join(", "),
 		)
 		.replace(
@@ -78,15 +78,17 @@ export function getTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_release(\\?\|[^\s}]*)? }}|{{album_release}}/g,
-			(_match, fmtParam) => {
+			/{{ album_release(\\?\|[^\s}]*)? }}|{{album_release(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const fmtParam = p1 ?? p2;
 				const fmt = fmtParam?.replace(/^\\?\|/, '') || defaultReleaseDateFormat;
 				return formatSpotifyDate(track.album.release_date, fmt);
 			},
 		)
 		.replace(
-			/{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -94,8 +96,9 @@ export function getTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -103,8 +106,9 @@ export function getTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -233,8 +237,9 @@ export function getTrackMessage(
 				: artists[0].popularity.toString(),
 		)
 		.replace(
-			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image}}/g,
-			(_match, sizeParam) => {
+			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -304,7 +309,7 @@ export function getRecentlyPlayedTrackMessage(
 			}](${track.external_urls.spotify})`,
 		)
 		.replace(
-			/{{ artists }}|{{artist}}/g,
+			/{{ artists }}|{{artists}}/g,
 			track.artists.map((a) => a.name).join(", "),
 		)
 		.replace(
@@ -335,15 +340,17 @@ export function getRecentlyPlayedTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_release(\\?\|[^\s}]*)? }}|{{album_release}}/g,
-			(_match, fmtParam) => {
+			/{{ album_release(\\?\|[^\s}]*)? }}|{{album_release(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const fmtParam = p1 ?? p2;
 				const fmt = fmtParam?.replace(/^\\?\|/, '') || defaultReleaseDateFormat;
 				return formatSpotifyDate(track.album.release_date, fmt);
 			},
 		)
 		.replace(
-			/{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -351,8 +358,9 @@ export function getRecentlyPlayedTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -360,8 +368,9 @@ export function getRecentlyPlayedTrackMessage(
 			},
 		)
 		.replace(
-			/{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small}}/g,
-			(_match, sizeParam) => {
+			/{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
@@ -490,8 +499,9 @@ export function getRecentlyPlayedTrackMessage(
 				: artists[0].popularity.toString(),
 		)
 		.replace(
-			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image}}/g,
-			(_match, sizeParam) => {
+			/{{ artist_image(\\?\|[^\s}]*)? }}|{{artist_image(\\?\|[^\s}]*)?}}/g,
+			(_match, p1, p2) => {
+				const sizeParam = p1 ?? p2;
 				const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
 				const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
 				const sizeStr = size ? `${sep}${size}` : "";
