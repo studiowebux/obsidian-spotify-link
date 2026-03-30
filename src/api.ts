@@ -333,8 +333,11 @@ export async function getPlaylistsForTrack(
 			if (likedRes.status === 200 && likedRes.json?.[0] === true) {
 				matchingNames.push("Liked Songs");
 			}
-		} catch {
-			// requires 'user-library-read' scope
+		} catch (e) {
+			new Notice(
+				"Spotify Link: Unable to check Liked Songs. Add 'user-library-read' to your Spotify Scopes and re-authenticate.",
+				10000,
+			);
 		}
 
 		// Step 2: Collect all owned playlists (page 1 sequential, then remaining pages in parallel)
@@ -391,8 +394,6 @@ export async function getPlaylistsForTrack(
 		}
 
 		// Step 3: Check playlists in parallel batches
-		const BATCH_SIZE = concurrency;
-
 		async function checkPlaylist(playlist: PlaylistSummary): Promise<{ name: string; found: boolean }> {
 			let itemsUrl: string | null =
 				`${SPOTIFY_API_BASE_ADDRESS}/playlists/${playlist.id}/tracks?limit=100&fields=items(track(id)),next`;
@@ -418,8 +419,8 @@ export async function getPlaylistsForTrack(
 			return { name: playlist.name, found };
 		}
 
-		for (let i = 0; i < ownedPlaylists.length; i += BATCH_SIZE) {
-			const batch = ownedPlaylists.slice(i, i + BATCH_SIZE);
+		for (let i = 0; i < ownedPlaylists.length; i += concurrency) {
+			const batch = ownedPlaylists.slice(i, i + concurrency);
 			const results = await Promise.all(batch.map(checkPlaylist));
 			for (const r of results) {
 				if (r.found) matchingNames.push(r.name);
@@ -434,9 +435,7 @@ export async function getPlaylistsForTrack(
 		);
 	} catch (e) {
 		notice.hide();
-		if (e instanceof Error && e.message.includes("scope")) {
-			throw e;
-		}
+		throw e;
 	}
 
 	return matchingNames;
