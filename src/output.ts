@@ -1,4 +1,4 @@
-import { getArtist } from "./api";
+import { getArtist, getPlaylistsForTrack } from "./api";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
 import {
 	getRecentlyPlayedTrackMessage,
@@ -35,10 +35,17 @@ export async function processCurrentlyPlayingTrack(
 ): Promise<string> {
 	if (data && data.is_playing) {
 		if (getTrackType(data) === "track") {
-			const artists = (data.item as Track).artists.map((artist) =>
+			const track = data.item as Track;
+			const artists = track.artists.map((artist) =>
 				getArtist(clientId, clientSecret, artist.id),
 			);
-			return getTrackMessage(data, await Promise.all(artists), template, options);
+
+			const needsPlaylists = /\{\{?\s*playlists\s*\}?\}/i.test(template);
+			const playlistNames = needsPlaylists
+				? await getPlaylistsForTrack(clientId, clientSecret, track.id, options?.playlistConcurrency ?? 10)
+				: [];
+
+			return getTrackMessage(data, await Promise.all(artists), template, playlistNames, options);
 		}
 		if (getTrackType(data) === "episode") {
 			return getEpisodeMessage(data, template, options);

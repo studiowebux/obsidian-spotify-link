@@ -24,7 +24,7 @@ export async function handleEditor(
       );
     }
   } catch (e) {
-    new Notice(e.message);
+    new Notice(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -43,6 +43,6 @@ export async function handleTemplateEditor(
       );
     }
   } catch (e) {
-    new Notice(e.message);
+    new Notice(e instanceof Error ? e.message : String(e));
   }
 }

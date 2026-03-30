@@ -14,6 +14,7 @@ export type SpotifyLinkSettings = {
 	appendArtistNames: boolean;
 	defaultImageSize: string;
 	defaultReleaseDateFormat: string;
+	playlistConcurrency: number;
 };
 
 /**
@@ -25,6 +26,7 @@ export type SpotifyLinkSettings = {
 export type TemplateOptions = {
 	defaultImageSize?: string;
 	defaultReleaseDateFormat?: string;
+	playlistConcurrency?: number;
 };
 
 //
@@ -297,6 +299,12 @@ export type Artist = {
 	popularity: number;
 	type: "artist";
 	uri: string;
+};
+
+export type PlaylistSummary = {
+	id: string;
+	name: string;
+	owner: { id: string };
 };
 
 export type RecentlyPlayed = {
