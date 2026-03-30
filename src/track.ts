@@ -32,6 +32,7 @@ export function getTrackMessage(
 	data: CurrentlyPlayingTrack,
 	artists: Artist[],
 	template: string,
+	playlistNames: string[] = [],
 	options?: TemplateOptions,
 ) {
 	if (!isTrack(data)) throw new Error("Not a track.");
@@ -281,6 +282,10 @@ export function getTrackMessage(
 		.replace(
 			/{{ main_artist_url }}|{{main_artist_url}}/g,
 			track.artists[0]?.href,
+		)
+		.replace(
+			/{{ playlists }}|{{playlists}}/g,
+			playlistNames.join(", "),
 		);
 }
 

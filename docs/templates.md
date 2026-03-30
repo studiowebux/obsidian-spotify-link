@@ -101,6 +101,12 @@ Output: `#Artist_One #Artist_Two`
 - `{{ genres_array }}` - Quoted genre array: `"genre1", "genre2"`
 - `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`
 
+**Playlists**
+
+- `{{ playlists }}` - Comma-separated names of the user's owned playlists that contain the current track, plus "Liked Songs" if saved. Requires `playlist-read-private` and `user-library-read` scopes (included in the default scope for new installations). Only fetched when the token is present in the template.
+
+> **Performance note:** The Spotify API does not provide a way to look up which playlists contain a given track. The plugin must scan each of your owned playlists individually, which can be slow depending on how many playlists you have and how many tracks they contain. The scan runs in parallel batches (configurable via the *Playlist concurrency* setting) to minimize wait time. A notification shows progress and reports the total time when complete.
+
 **Timestamps**
 
 - `{{ timestamp }}` - Local date and time
@@ -183,6 +189,16 @@ Supports all track variables plus:
 **Genres:** {{ genres_hashtag }}
 **Added at:** *{{ timestamp }}*
 ```
+
+### Track with Playlists
+
+```
+**Song:** {{ song_name }}
+**Artists:** {{ artists }}
+**Playlists:** {{ playlists }}
+```
+
+Output: `**Playlists:** My Favorites, Workout Mix, Chill Vibes`
 
 ### Episode Template
 

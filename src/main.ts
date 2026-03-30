@@ -38,12 +38,12 @@ import {
 import { isPath } from "./utils";
 
 export default class SpotifyLinkPlugin extends Plugin {
-	settings: SpotifyLinkSettings;
+	settings!: SpotifyLinkSettings;
 
 	// States
 	spotifyConnected = false;
 	spotifyUrl = "";
-	statusBar: HTMLElement;
+	statusBar!: HTMLElement;
 
 	async loadOrGetTemplate(input: string): Promise<string> {
 		try {
@@ -71,7 +71,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 
 			return input; // This is the inline template.
 		} catch (e) {
-			new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			return "";
 		}
 	}
@@ -97,7 +97,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 						this.app.vault.getAbstractFileByPath(filename) as TFile,
 					);
 			} catch (e) {
-				new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -106,8 +106,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 		try {
 			await vault.createFolder(folder);
 		} catch (e) {
-			if (e.message !== "Folder already exists.") {
-				new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+			if ((e instanceof Error ? e.message : String(e)) !== "Folder already exists.") {
+				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -125,7 +125,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					);
 				}
 			} catch (e) {
-				new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -234,7 +234,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			// Auto open the file even if there is an error.
 			// Probably an already exists as the others should be handle correctly.
 			await this.autoOpen(filename);
-			new Notice("[ERROR] Spotify Link Plugin: " + e.message, 10000);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 		}
 	}
 
@@ -273,10 +273,10 @@ export default class SpotifyLinkPlugin extends Plugin {
 		//
 		this.registerObsidianProtocolHandler(
 			"spotify-auth",
-			async (params: SpotifyAuthCallback) => {
+			async (params) => {
 				try {
 					this.spotifyConnected = await handleCallback(
-						params,
+						params as unknown as SpotifyAuthCallback,
 						this.settings.spotifyClientId,
 						this.settings.spotifyClientSecret,
 						this.settings.spotifyState,
@@ -291,7 +291,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					);
 				} catch (e) {
 					new Notice(
-						"[ERROR] Spotify Link Plugin: " + e.message,
+						"[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)),
 						3000,
 					);
 					this.spotifyConnected = false;
@@ -371,7 +371,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					);
 					new Notice(`Spotify Link Plugin: Access Refreshed`);
 				} catch (e) {
-					new Notice(`[ERROR] Spotify Link Plugin: ${e.message}`);
+					new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
 				}
 			},
 		});
@@ -442,7 +442,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 								await this.createFile(file.path, customMenu.id);
 							} catch (e) {
 								new Notice(
-									`[ERROR] Spotify Link Plugin: ${e.message}`,
+									`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`,
 								);
 								return false;
 							}
@@ -450,7 +450,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					});
 				};
 				this.registerEvent(
-					this.app.workspace.on("file-menu", menuCreateFile),
+					(this.app.workspace as any).on("file-menu", menuCreateFile),
 				);
 			}
 		} else {
@@ -468,8 +468,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 			this.spotifyConnected = info.success;
 			this.spotifyUrl = info.spotifyUrl;
 		} catch (e) {
-			new Notice(`[ERROR] Spotify Link Plugin: ${e.message}`);
-			return false;
+			new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
+			this.spotifyConnected = false;
 		} finally {
 			this.updateStatusBar();
 		}

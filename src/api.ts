@@ -1,10 +1,11 @@
-import { RequestUrlResponse, requestUrl } from "obsidian";
+import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
 import {
 	AccessTokenResponse,
 	Artist,
 	AuthorizationCodeResponse,
 	CurrentlyPlayingTrack,
 	Me,
+	PlaylistSummary,
 	RecentlyPlayed,
 	RefreshTokenResponse,
 	SpotifyAuthCallback,
@@ -297,4 +298,145 @@ export async function getRecentlyPlayedTracks(
 	} catch (e) {
 		throw new Error("Unable to get recently played tracks.");
 	}
+}
+
+/**
+ * Returns the names of the user's owned playlists that contain the given track,
+ * plus "Liked Songs" if the track is saved in the user's library.
+ *
+ * Optimizations:
+ *   - Liked Songs: single /me/tracks/contains call
+ *   - Playlist collection: fetch page 1 to get total, then fetch remaining pages in parallel
+ *   - Playlist checking: parallel batches (configurable concurrency)
+ *   - fields param on tracks endpoint to minimize payload
+ *   - Early exit per playlist once track is found
+ */
+export async function getPlaylistsForTrack(
+	clientId: string,
+	clientSecret: string,
+	trackId: string,
+	concurrency = 10,
+): Promise<string[]> {
+	const token = await getAccessToken(clientId, clientSecret);
+	const matchingNames: string[] = [];
+
+	const t0 = Date.now();
+	const notice = new Notice("Spotify Link: Fetching playlists...", 0);
+	try {
+		// Step 1: Check Liked Songs (single API call)
+		try {
+			const likedRes: RequestUrlResponse = await requestUrl({
+				url: `${SPOTIFY_API_BASE_ADDRESS}/me/tracks/contains?ids=${trackId}`,
+				method: "GET",
+				headers: { Authorization: `Bearer ${token}` },
+			});
+			if (likedRes.status === 200 && likedRes.json?.[0] === true) {
+				matchingNames.push("Liked Songs");
+			}
+		} catch (e) {
+			new Notice(
+				"Spotify Link: Unable to check Liked Songs. Add 'user-library-read' to your Spotify Scopes and re-authenticate.",
+				10000,
+			);
+		}
+
+		// Step 2: Collect all owned playlists (page 1 sequential, then remaining pages in parallel)
+		const me = await getMe(clientId, clientSecret);
+		const ownedPlaylists: PlaylistSummary[] = [];
+		const PAGE_SIZE = 50;
+
+		const firstRes: RequestUrlResponse = await requestUrl({
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`,
+			method: "GET",
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (firstRes.status === 403) {
+			notice.hide();
+			throw new Error(
+				"Missing 'playlist-read-private' scope. Add it to your Spotify Scopes in plugin settings, then click the Spotify icon to re-authenticate.",
+			);
+		}
+		if (firstRes.status !== 200 || !firstRes.json?.items) {
+			notice.hide();
+			return matchingNames;
+		}
+
+		const total = firstRes.json.total ?? 0;
+		for (const pl of firstRes.json.items) {
+			if (pl.owner?.id === me.id) {
+				ownedPlaylists.push({ id: pl.id, name: pl.name, owner: pl.owner });
+			}
+		}
+
+		if (total > PAGE_SIZE) {
+			const remainingPages: number[] = [];
+			for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) {
+				remainingPages.push(offset);
+			}
+			const pageResults = await Promise.all(
+				remainingPages.map(async (offset) => {
+					const res: RequestUrlResponse = await requestUrl({
+						url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
+						method: "GET",
+						headers: { Authorization: `Bearer ${token}` },
+					});
+					if (res.status !== 200 || !res.json?.items) return [];
+					return res.json.items;
+				}),
+			);
+			for (const items of pageResults) {
+				for (const pl of items) {
+					if (pl.owner?.id === me.id) {
+						ownedPlaylists.push({ id: pl.id, name: pl.name, owner: pl.owner });
+					}
+				}
+			}
+		}
+
+		// Step 3: Check playlists in parallel batches
+		async function checkPlaylist(playlist: PlaylistSummary): Promise<{ name: string; found: boolean }> {
+			let itemsUrl: string | null =
+				`${SPOTIFY_API_BASE_ADDRESS}/playlists/${playlist.id}/tracks?limit=100&fields=items(track(id)),next`;
+			let found = false;
+
+			while (itemsUrl && !found) {
+				const res: RequestUrlResponse = await requestUrl({
+					url: itemsUrl,
+					method: "GET",
+					headers: { Authorization: `Bearer ${token}` },
+				});
+				if (res.status !== 200) break;
+				const data = res.json;
+				if (!data?.items) break;
+				for (const item of data.items) {
+					if (item.track?.id === trackId) {
+						found = true;
+						break;
+					}
+				}
+				itemsUrl = data.next ?? null;
+			}
+			return { name: playlist.name, found };
+		}
+
+		for (let i = 0; i < ownedPlaylists.length; i += concurrency) {
+			const batch = ownedPlaylists.slice(i, i + concurrency);
+			const results = await Promise.all(batch.map(checkPlaylist));
+			for (const r of results) {
+				if (r.found) matchingNames.push(r.name);
+			}
+		}
+
+		const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+		notice.hide();
+		new Notice(
+			`Spotify Link: Found ${matchingNames.length} playlist(s) in ${elapsed}s`,
+			5000,
+		);
+	} catch (e) {
+		notice.hide();
+		throw e;
+	}
+
+	return matchingNames;
 }

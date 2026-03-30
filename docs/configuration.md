@@ -48,9 +48,11 @@ Client ID and Secret are stored unencrypted in plugin data. Avoid syncing to pub
 - Change if implementing custom security
 
 **Spotify Scopes**
-- Default: `user-read-currently-playing user-read-recently-played`
+- Default: `user-read-currently-playing user-read-recently-played playlist-read-private user-library-read`
+- `playlist-read-private` and `user-library-read` are required for the `{{ playlists }}` template token
 - Modify only if extending functionality
 - Space-separated list
+- **Existing users:** if you installed before these scopes were added, append `playlist-read-private user-library-read` to your scopes setting and re-authenticate (click the Spotify ribbon icon)
 
 ### Templates
 
@@ -145,7 +147,7 @@ Token persistence across Obsidian restarts via localStorage.
 {
   spotifyClientId: "",
   spotifyClientSecret: "",
-  spotifyScopes: "user-read-currently-playing user-read-recently-played",
+  spotifyScopes: "user-read-currently-playing user-read-recently-played playlist-read-private user-library-read",
   spotifyState: "it-can-be-anything",
   templates: [
     "**Song Name:** {{ song_name }}\n**Album:** {{ album }}...",

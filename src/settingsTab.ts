@@ -177,7 +177,8 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ album_cover_url_small }}" })
 			.createEl("li", { text: "{{ song_url }}" })
 			.createEl("li", { text: "{{ album_url }}" })
-			.createEl("li", { text: "{{ main_artist_url }}" });
+			.createEl("li", { text: "{{ main_artist_url }}" })
+			.createEl("li", { text: "{{ playlists }}" });
 
 		divDoc.createEl("p", { text: "Available variables (podcast):" });
 		divDoc
@@ -358,9 +359,24 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
 		new Setting(containerEl)
+			.setName("Playlist concurrency")
+			.setDesc(
+				"Number of playlists to check in parallel when resolving {{ playlists }}. Higher = faster but more API calls at once. Default: 10.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("10")
+					.setValue(String(this.plugin.settings.playlistConcurrency))
+					.onChange(async (value) => {
+						const n = parseInt(value, 10);
+						this.plugin.settings.playlistConcurrency = n > 0 ? n : 10;
+						await this.plugin.saveSettings();
+					})
+			);
+		new Setting(containerEl)
 			.setName("Spotify Scopes")
 			.setDesc(
-				"Scopes (comma-delimited list, you should update this only if you know what you are doing.",
+				"Scopes (space-separated list). The {{ playlists }} token requires 'playlist-read-private' and 'user-library-read'. Update only if you know what you are doing.",
 			)
 			.addText((text) =>
 				text
