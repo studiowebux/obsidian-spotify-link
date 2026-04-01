@@ -56,11 +56,12 @@ Client ID and Secret are stored unencrypted in plugin data. Avoid syncing to pub
 
 ### Templates
 
-Three template slots:
+Four template slots:
 
 1. **Template for song** - Track insertion format
 2. **Template for podcast** - Episode insertion format
 3. **Template for recently played tracks** - History format
+4. **Template for all playlists** - Per-playlist format (see [All Playlists Variables](templates.md#all-playlists-variables))
 
 Templates can be:
 
@@ -106,6 +107,18 @@ Path resolution attempts:
 - Default: `""` (raw Spotify date, e.g. `2024-03-15`)
 - Tokens: `YYYY`, `MM`, `DD` (e.g. `YYYY` → `2024`, `MM/YYYY` → `03/2024`)
 - Can be overridden per-token: `{{ album_release|YYYY }}`
+
+### Playlists
+
+**Enable playlist features**
+- Toggle: Enable or disable all playlist-related commands and the `{{ playlists }}` template token
+- Default: `true`
+- When disabled, playlist commands show a notice and return early, and `{{ playlists }}` resolves to empty
+
+**Playlist concurrency**
+- Number of playlists to check in parallel when resolving `{{ playlists }}`
+- Default: `10`
+- Higher values = faster but more concurrent API calls
 
 ### Context Menu
 

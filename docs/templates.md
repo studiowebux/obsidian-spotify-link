@@ -161,6 +161,32 @@ Image tokens accept an optional inline size override — see [Image dimensions](
 
 Same format as track timestamps (see above).
 
+### All Playlists Variables
+
+Used with the "all playlists" commands. Each token is replaced per playlist.
+
+**Basic Info**
+
+- `{{ playlist_name }}` - Playlist name
+- `{{ playlist_link }}` - Markdown link to playlist on Spotify
+- `{{ playlist_url }}` - Spotify URL (plain text, `open.spotify.com`)
+- `{{ playlist_description }}` - Playlist description
+- `{{ playlist_track_count }}` - Number of tracks in the playlist
+
+**Covers**
+
+- `{{ playlist_cover_large }}` - Largest cover as markdown image
+- `{{ playlist_cover_small }}` - Smallest cover as markdown image
+- `{{ playlist_cover_url }}` - Largest cover URL (plain text)
+
+Image tokens accept an optional inline size override — see [Image dimensions](#image-dimensions).
+
+**Metadata**
+
+- `{{ playlist_owner }}` - Owner display name
+- `{{ playlist_public }}` - `true` or `false`
+- `{{ playlist_collaborative }}` - `true` or `false`
+
 ### Recently Played Variables
 
 Supports all track variables plus:
@@ -199,6 +225,38 @@ Supports all track variables plus:
 ```
 
 Output: `**Playlists:** My Favorites, Workout Mix, Chill Vibes`
+
+### All Playlists Template
+
+```
+---
+playlist: "{{ playlist_name }}"
+url: "{{ playlist_url }}"
+tracks: {{ playlist_track_count }}
+public: {{ playlist_public }}
+collaborative: {{ playlist_collaborative }}
+owner: "{{ playlist_owner }}"
+---
+
+## {{ playlist_name }}
+
+{{ playlist_cover_large|300x300 }}
+
+**Link:** {{ playlist_link }}
+**Tracks:** {{ playlist_track_count }}
+**Owner:** {{ playlist_owner }}
+**Public:** {{ playlist_public }} | **Collaborative:** {{ playlist_collaborative }}
+
+> {{ playlist_description }}
+
+---
+```
+
+### Minimal All Playlists Template
+
+```
+- {{ playlist_link }} ({{ playlist_track_count }} tracks)
+```
 
 ### Episode Template
 

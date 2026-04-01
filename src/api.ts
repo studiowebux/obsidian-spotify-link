@@ -5,6 +5,7 @@ import {
 	AuthorizationCodeResponse,
 	CurrentlyPlayingTrack,
 	Me,
+	PlaylistDetail,
 	PlaylistSummary,
 	RecentlyPlayed,
 	RefreshTokenResponse,
@@ -439,4 +440,91 @@ export async function getPlaylistsForTrack(
 	}
 
 	return matchingNames;
+}
+
+export async function getAllPlaylists(
+	clientId: string,
+	clientSecret: string,
+): Promise<PlaylistDetail[]> {
+	const token = await getAccessToken(clientId, clientSecret);
+	const playlists: PlaylistDetail[] = [];
+	const PAGE_SIZE = 50;
+
+	const notice = new Notice("Spotify Link: Fetching all playlists...", 0);
+	try {
+		const firstRes: RequestUrlResponse = await requestUrl({
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`,
+			method: "GET",
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (firstRes.status === 403) {
+			notice.hide();
+			throw new Error(
+				"Missing 'playlist-read-private' scope. Add it to your Spotify Scopes in plugin settings, then click the Spotify icon to re-authenticate.",
+			);
+		}
+		if (firstRes.status !== 200 || !firstRes.json?.items) {
+			notice.hide();
+			return playlists;
+		}
+
+		const total = firstRes.json.total ?? 0;
+		for (const pl of firstRes.json.items) {
+			playlists.push({
+				id: pl.id,
+				name: pl.name,
+				description: pl.description ?? "",
+				external_urls: pl.external_urls,
+				images: pl.images ?? [],
+				owner: { id: pl.owner?.id, display_name: pl.owner?.display_name ?? "" },
+				public: pl.public ?? false,
+				collaborative: pl.collaborative ?? false,
+				tracks: { total: pl.tracks?.total ?? 0 },
+			});
+		}
+
+		if (total > PAGE_SIZE) {
+			const remainingPages: number[] = [];
+			for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) {
+				remainingPages.push(offset);
+			}
+			const pageResults = await Promise.all(
+				remainingPages.map(async (offset) => {
+					const res: RequestUrlResponse = await requestUrl({
+						url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
+						method: "GET",
+						headers: { Authorization: `Bearer ${token}` },
+					});
+					if (res.status !== 200 || !res.json?.items) return [];
+					return res.json.items;
+				}),
+			);
+			for (const items of pageResults) {
+				for (const pl of items) {
+					playlists.push({
+						id: pl.id,
+						name: pl.name,
+						description: pl.description ?? "",
+						external_urls: pl.external_urls,
+						images: pl.images ?? [],
+						owner: { id: pl.owner?.id, display_name: pl.owner?.display_name ?? "" },
+						public: pl.public ?? false,
+						collaborative: pl.collaborative ?? false,
+						tracks: { total: pl.tracks?.total ?? 0 },
+					});
+				}
+			}
+		}
+
+		notice.hide();
+		new Notice(
+			`Spotify Link: Fetched ${playlists.length} playlist(s)`,
+			5000,
+		);
+	} catch (e) {
+		notice.hide();
+		throw e;
+	}
+
+	return playlists;
 }

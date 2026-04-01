@@ -357,6 +357,58 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("hr");
 
+		containerEl.createEl("h5", { text: "Playlists" });
+
+		new Setting(containerEl)
+			.setName("Enable playlist features")
+			.setDesc(
+				"Enable playlist-related commands and the {{ playlists }} template token. Disable to opt out of all playlist API calls.",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.enablePlaylists);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.enablePlaylists = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		const divPlaylistDoc = containerEl.createDiv();
+		divPlaylistDoc.createEl("p", {
+			text: "Available variables (all playlists template):",
+		});
+		divPlaylistDoc
+			.createEl("ul")
+			.createEl("li", { text: "{{ playlist_name }}" })
+			.createEl("li", { text: "{{ playlist_link }}" })
+			.createEl("li", { text: "{{ playlist_url }}" })
+			.createEl("li", { text: "{{ playlist_description }}" })
+			.createEl("li", { text: "{{ playlist_track_count }}" })
+			.createEl("li", { text: "{{ playlist_cover_large }}" })
+			.createEl("li", { text: "{{ playlist_cover_small }}" })
+			.createEl("li", { text: "{{ playlist_cover_url }}" })
+			.createEl("li", { text: "{{ playlist_owner }}" })
+			.createEl("li", { text: "{{ playlist_public }}" })
+			.createEl("li", { text: "{{ playlist_collaborative }}" });
+
+		new Setting(containerEl)
+			.setName("Template for all playlists")
+			.setDesc(
+				"Define a custom template applied per playlist when using the 'all playlists' commands, or a path to your template definition",
+			)
+			.addTextArea((text) =>
+				text
+					.setPlaceholder(
+						"Example: **{{ playlist_name }}**\n{{ playlist_link }}\nTracks: {{ playlist_track_count }}",
+					)
+					.setValue(this.plugin.settings.templates[3] ?? "")
+					.onChange(async (value) => {
+						this.plugin.settings.templates[3] = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		containerEl.createEl("hr");
+
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
 		new Setting(containerEl)
 			.setName("Playlist concurrency")

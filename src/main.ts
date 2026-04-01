@@ -17,13 +17,14 @@ import {
 	Track,
 } from "./types";
 import {
+	getAllPlaylists,
 	getArtist,
 	getSpotifyUrl,
 	handleCallback,
 	requestRefreshToken,
 } from "./api";
 import SettingsTab from "./settingsTab";
-import { handleEditor, handleTemplateEditor } from "./ui";
+import { handleEditor, handlePlaylistsEditor, handleTemplateEditor } from "./ui";
 import { onLogin, onAutoLogin } from "./events";
 import { DEFAULT_SETTINGS } from "./default";
 import {
@@ -32,6 +33,7 @@ import {
 	getRecentlyPlayedTracks,
 } from "./api";
 import {
+	processAllPlaylists,
 	processCurrentlyPlayingTrack,
 	processRecentlyPlayedTracks,
 } from "./output";
@@ -187,6 +189,23 @@ export default class SpotifyLinkPlugin extends Plugin {
 				this.settings.spotifyClientId,
 				this.settings.spotifyClientSecret,
 				tracks,
+				await this.loadOrGetTemplate(
+					this.settings.templates[template_index],
+				),
+				this.settings,
+			)}\n\n`;
+		} else if (
+			id === "create-file-for-all-playlists-using-template"
+		) {
+			template_index = 3;
+
+			const playlists = await getAllPlaylists(
+				this.settings.spotifyClientId,
+				this.settings.spotifyClientSecret,
+			);
+
+			content = `${processAllPlaylists(
+				playlists,
 				await this.loadOrGetTemplate(
 					this.settings.templates[template_index],
 				),
@@ -425,6 +444,39 @@ export default class SpotifyLinkPlugin extends Plugin {
 				await this.createFile(
 					this.settings.defaultDestination ?? "",
 					"create-file-for-recently-played-tracks-using-template",
+				);
+			},
+		});
+
+		// All Playlists
+		this.addCommand({
+			id: "create-file-for-all-playlists-using-template",
+			name: "Create file for all playlists using template",
+			callback: async () => {
+				if (!this.settings.enablePlaylists) {
+					new Notice("Spotify Link: Playlist features are disabled in settings.");
+					return;
+				}
+				await this.createFile(
+					this.settings.defaultDestination ?? "",
+					"create-file-for-all-playlists-using-template",
+				);
+			},
+		});
+		this.addCommand({
+			id: "append-all-playlists-using-template",
+			name: "Append all playlists using template",
+			editorCallback: async (editor: Editor) => {
+				if (!this.settings.enablePlaylists) {
+					new Notice("Spotify Link: Playlist features are disabled in settings.");
+					return;
+				}
+				await handlePlaylistsEditor(
+					editor,
+					await this.loadOrGetTemplate(this.settings.templates[3]),
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+					this.settings,
 				);
 			},
 		});

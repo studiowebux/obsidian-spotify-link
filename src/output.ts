@@ -1,12 +1,13 @@
 import { getArtist, getPlaylistsForTrack } from "./api";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
+import { getPlaylistMessage } from "./playlist";
 import {
 	getRecentlyPlayedTrackMessage,
 	getTrackMessage,
 	getTrackMessageTimestamp,
 	getTrackType,
 } from "./track";
-import { CurrentlyPlayingTrack, RecentlyPlayed, TemplateOptions, Track } from "./types";
+import { CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track } from "./types";
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -40,7 +41,8 @@ export async function processCurrentlyPlayingTrack(
 				getArtist(clientId, clientSecret, artist.id),
 			);
 
-			const needsPlaylists = /\{\{?\s*playlists\s*\}?\}/i.test(template);
+			const playlistsEnabled = options?.enablePlaylists !== false;
+			const needsPlaylists = playlistsEnabled && /\{\{?\s*playlists\s*\}?\}/i.test(template);
 			const playlistNames = needsPlaylists
 				? await getPlaylistsForTrack(clientId, clientSecret, track.id, options?.playlistConcurrency ?? 10)
 				: [];
@@ -85,4 +87,18 @@ export async function processRecentlyPlayedTracks(
 	}
 
 	return "Nothing fetched from Spotify API.";
+}
+
+export function processAllPlaylists(
+	playlists: PlaylistDetail[],
+	template: string,
+	options?: TemplateOptions,
+): string {
+	if (!playlists || playlists.length === 0) {
+		return "No playlists found.";
+	}
+
+	return playlists
+		.map((playlist) => getPlaylistMessage(playlist, template, options))
+		.join("\n");
 }

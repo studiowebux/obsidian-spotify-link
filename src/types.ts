@@ -15,6 +15,7 @@ export type SpotifyLinkSettings = {
 	defaultImageSize: string;
 	defaultReleaseDateFormat: string;
 	playlistConcurrency: number;
+	enablePlaylists: boolean;
 };
 
 /**
@@ -27,6 +28,7 @@ export type TemplateOptions = {
 	defaultImageSize?: string;
 	defaultReleaseDateFormat?: string;
 	playlistConcurrency?: number;
+	enablePlaylists?: boolean;
 };
 
 //
@@ -305,6 +307,18 @@ export type PlaylistSummary = {
 	id: string;
 	name: string;
 	owner: { id: string };
+};
+
+export type PlaylistDetail = {
+	id: string;
+	name: string;
+	description: string;
+	external_urls: { spotify: string };
+	images: { url: string; height: number; width: number }[];
+	owner: { id: string; display_name: string };
+	public: boolean;
+	collaborative: boolean;
+	tracks: { total: number };
 };
 
 export type RecentlyPlayed = {
