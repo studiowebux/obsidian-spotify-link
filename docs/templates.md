@@ -199,11 +199,35 @@ My Favorites (142 tracks) — https://open.spotify.com/playlist/abc123
 [My Favorites](https://open.spotify.com/playlist/abc123)
 ```
 
-**Example output** for `{{ playlist_cover_large|200x200 }}`:
+**Cover images — size variants:**
 
+No size (full width):
 ```
-![My Favorites|200x200](https://mosaic.scdn.co/image/abc123)
+{{ playlist_cover_large }}
+→ ![My Favorites](https://mosaic.scdn.co/image/abc123)
 ```
+
+Inline size override:
+```
+{{ playlist_cover_large|200x200 }}
+→ ![My Favorites|200x200](https://mosaic.scdn.co/image/abc123)
+```
+
+Width only:
+```
+{{ playlist_cover_small|100 }}
+→ ![My Favorites|100](https://mosaic.scdn.co/image/abc123-small)
+```
+
+Inside a Markdown table (escaped pipe):
+```
+| Cover |
+| ----- |
+| {{ playlist_cover_large\|150x150 }} |
+→ ![My Favorites\|150x150](https://mosaic.scdn.co/image/abc123)
+```
+
+The *Default image size* setting (e.g. `200x200`) applies to all cover tokens unless overridden inline. See [Image dimensions](#image-dimensions) for details.
 
 ### Recently Played Variables
 
