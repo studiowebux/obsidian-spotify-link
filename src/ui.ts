@@ -5,7 +5,7 @@ import {
   getCurrentlyPlayingTrackAsString,
 } from "./api";
 import { processAllPlaylists, processCurrentlyPlayingTrack } from "./output";
-import { TemplateOptions, Track } from "./types";
+import { TemplateOptions, Track, TrackCommandResult } from "./types";
 
 export async function handleEditor(
   editor: Editor,
@@ -33,11 +33,6 @@ export async function handleEditor(
   }
   return { trackId: null, playlistNames: [] };
 }
-
-export type TrackCommandResult = {
-  trackId: string | null;
-  playlistNames: string[];
-};
 
 export async function handleTemplateEditor(
   editor: Editor,

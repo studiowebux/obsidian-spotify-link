@@ -7,7 +7,7 @@ import {
 	getTrackMessageTimestamp,
 	getTrackType,
 } from "./track";
-import { CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track } from "./types";
+import { CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types";
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -26,11 +26,6 @@ export function processCurrentlyPlayingTrackInput(
 	}
 	return "No song is playing.";
 }
-
-export type TrackProcessingResult = {
-	content: string;
-	playlistNames: string[];
-};
 
 export async function processCurrentlyPlayingTrack(
 	clientId: string,

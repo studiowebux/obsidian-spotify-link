@@ -184,6 +184,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 
 		for (const playlist of playlists) {
 			if (!playlist.name || !playlist.name.trim()) {
+				console.warn(`Spotify Link: Skipping playlist with no name (id: ${playlist.id})`);
 				skipped++;
 				continue;
 			}
@@ -215,7 +216,11 @@ export default class SpotifyLinkPlugin extends Plugin {
 		new Notice(`Spotify Link: ${parts.join(", ")}.`, 5000);
 	}
 
-	async regeneratePlaylistNotes(trackId: string, cachedPlaylistNames?: string[]) {
+	async regeneratePlaylistNotes(
+		trackId: string,
+		cachedPlaylistNames?: string[],
+		cachedAllPlaylists?: PlaylistDetail[],
+	) {
 		if (!this.settings.autoRegeneratePlaylists || !this.settings.enablePlaylists) {
 			return;
 		}
@@ -233,11 +238,13 @@ export default class SpotifyLinkPlugin extends Plugin {
 
 			if (matchingNames.length === 0) return;
 
-			// Fetch all playlists to get full details for the matching ones
-			const allPlaylists = await getAllPlaylists(
-				this.settings.spotifyClientId,
-				this.settings.spotifyClientSecret,
-			);
+			// Reuse cached playlists if available, otherwise fetch
+			const allPlaylists = cachedAllPlaylists && cachedAllPlaylists.length > 0
+				? cachedAllPlaylists
+				: await getAllPlaylists(
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+				);
 
 			const matchingPlaylists = allPlaylists.filter((pl: PlaylistDetail) =>
 				matchingNames.includes(pl.name),

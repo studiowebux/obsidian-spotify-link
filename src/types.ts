@@ -281,6 +281,16 @@ export type Me = {
 
 export type TrackType = "track" | "episode" | "ad" | "unknown";
 
+export type TrackProcessingResult = {
+	content: string;
+	playlistNames: string[];
+};
+
+export type TrackCommandResult = {
+	trackId: string | null;
+	playlistNames: string[];
+};
+
 export type Artist = {
 	external_urls: {
 		spotify: string;

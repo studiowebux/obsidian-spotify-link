@@ -187,6 +187,24 @@ Image tokens accept an optional inline size override — see [Image dimensions](
 - `{{ playlist_public }}` - `true` or `false`
 - `{{ playlist_collaborative }}` - `true` or `false`
 
+**Example output** for `{{ playlist_name }} ({{ playlist_track_count }} tracks) — {{ playlist_url }}`:
+
+```
+My Favorites (142 tracks) — https://open.spotify.com/playlist/abc123
+```
+
+**Example output** for `{{ playlist_link }}`:
+
+```
+[My Favorites](https://open.spotify.com/playlist/abc123)
+```
+
+**Example output** for `{{ playlist_cover_large|200x200 }}`:
+
+```
+![My Favorites|200x200](https://mosaic.scdn.co/image/abc123)
+```
+
 ### Recently Played Variables
 
 Supports all track variables plus:
