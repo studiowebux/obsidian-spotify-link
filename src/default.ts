@@ -8,6 +8,8 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 	templates: [
 		"**Song Name:** {{ song_name }}\n**Song URL:** {{ song_link }}\n**Album Name:** {{ album }}\n**Album Release Date:** {{ album_release }}\n**Album URL:** {{ album_link }}\n**Cover:** {{ album_cover_medium }}\n**Cover URL:** {{ album_cover_link_medium }}\n**Artists:** {{ artists }}\n**Added at:** *{{ timestamp }}*",
 		"**Episode Name:** {{ episode_name }}\n**Description:** {{ description }}\n**Added at:** *{{ timestamp }}*",
+		"",
+		"**{{ playlist_name }}**\n{{ playlist_link }}\nTracks: {{ playlist_track_count }}\n{{ playlist_description }}\n\n---",
 	],
 	menu: [
 		{
@@ -36,6 +38,9 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 			id: "create-file-for-recently-played-tracks-using-template",
 		},
 	],
+	enablePlaylists: true,
+	autoRegeneratePlaylists: false,
+	playlistDestination: "",
 	defaultDestination: "",
 	overwrite: false,
 	autoOpen: false,

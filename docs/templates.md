@@ -161,6 +161,74 @@ Image tokens accept an optional inline size override — see [Image dimensions](
 
 Same format as track timestamps (see above).
 
+### All Playlists Variables
+
+Used with the "all playlists" commands. Each token is replaced per playlist.
+
+**Basic Info**
+
+- `{{ playlist_name }}` - Playlist name
+- `{{ playlist_link }}` - Markdown link to playlist on Spotify
+- `{{ playlist_url }}` - Spotify URL (plain text, `open.spotify.com`)
+- `{{ playlist_description }}` - Playlist description
+- `{{ playlist_track_count }}` - Number of tracks in the playlist
+
+**Covers**
+
+- `{{ playlist_cover_large }}` - Largest cover as markdown image
+- `{{ playlist_cover_small }}` - Smallest cover as markdown image
+- `{{ playlist_cover_url }}` - Largest cover URL (plain text)
+
+Image tokens accept an optional inline size override — see [Image dimensions](#image-dimensions).
+
+**Metadata**
+
+- `{{ playlist_owner }}` - Owner display name
+- `{{ playlist_public }}` - `true` or `false`
+- `{{ playlist_collaborative }}` - `true` or `false`
+
+**Example output** for `{{ playlist_name }} ({{ playlist_track_count }} tracks) — {{ playlist_url }}`:
+
+```
+My Favorites (142 tracks) — https://open.spotify.com/playlist/abc123
+```
+
+**Example output** for `{{ playlist_link }}`:
+
+```
+[My Favorites](https://open.spotify.com/playlist/abc123)
+```
+
+**Cover images — size variants:**
+
+No size (full width):
+```
+{{ playlist_cover_large }}
+→ ![My Favorites](https://mosaic.scdn.co/image/abc123)
+```
+
+Inline size override:
+```
+{{ playlist_cover_large|200x200 }}
+→ ![My Favorites|200x200](https://mosaic.scdn.co/image/abc123)
+```
+
+Width only:
+```
+{{ playlist_cover_small|100 }}
+→ ![My Favorites|100](https://mosaic.scdn.co/image/abc123-small)
+```
+
+Inside a Markdown table (escaped pipe):
+```
+| Cover |
+| ----- |
+| {{ playlist_cover_large\|150x150 }} |
+→ ![My Favorites\|150x150](https://mosaic.scdn.co/image/abc123)
+```
+
+The *Default image size* setting (e.g. `200x200`) applies to all cover tokens unless overridden inline. See [Image dimensions](#image-dimensions) for details.
+
 ### Recently Played Variables
 
 Supports all track variables plus:
@@ -199,6 +267,38 @@ Supports all track variables plus:
 ```
 
 Output: `**Playlists:** My Favorites, Workout Mix, Chill Vibes`
+
+### All Playlists Template
+
+```
+---
+playlist: "{{ playlist_name }}"
+url: "{{ playlist_url }}"
+tracks: {{ playlist_track_count }}
+public: {{ playlist_public }}
+collaborative: {{ playlist_collaborative }}
+owner: "{{ playlist_owner }}"
+---
+
+## {{ playlist_name }}
+
+{{ playlist_cover_large|300x300 }}
+
+**Link:** {{ playlist_link }}
+**Tracks:** {{ playlist_track_count }}
+**Owner:** {{ playlist_owner }}
+**Public:** {{ playlist_public }} | **Collaborative:** {{ playlist_collaborative }}
+
+> {{ playlist_description }}
+
+---
+```
+
+### Minimal All Playlists Template
+
+```
+- {{ playlist_link }} ({{ playlist_track_count }} tracks)
+```
 
 ### Episode Template
 

@@ -13,17 +13,20 @@ import {
 	SpotifyLinkSettings,
 	SpotifyAuthCallback,
 	CurrentlyPlayingTrack,
+	PlaylistDetail,
 	RecentlyPlayed,
 	Track,
 } from "./types";
 import {
+	getAllPlaylists,
 	getArtist,
+	getPlaylistsForTrack,
 	getSpotifyUrl,
 	handleCallback,
 	requestRefreshToken,
 } from "./api";
 import SettingsTab from "./settingsTab";
-import { handleEditor, handleTemplateEditor } from "./ui";
+import { handleEditor, handlePlaylistsEditor, handleTemplateEditor } from "./ui";
 import { onLogin, onAutoLogin } from "./events";
 import { DEFAULT_SETTINGS } from "./default";
 import {
@@ -32,8 +35,10 @@ import {
 	getRecentlyPlayedTracks,
 } from "./api";
 import {
+	processAllPlaylists,
 	processCurrentlyPlayingTrack,
 	processRecentlyPlayedTracks,
+	processSinglePlaylist,
 } from "./output";
 import { isPath } from "./utils";
 
@@ -155,11 +160,136 @@ export default class SpotifyLinkPlugin extends Plugin {
 		return name;
 	}
 
+	async createPlaylistFiles() {
+		const playlists = await getAllPlaylists(
+			this.settings.spotifyClientId,
+			this.settings.spotifyClientSecret,
+		);
+
+		if (!playlists || playlists.length === 0) {
+			new Notice("Spotify Link: No playlists found.");
+			return;
+		}
+
+		const template = await this.loadOrGetTemplate(
+			this.settings.templates[3],
+		);
+		const dest = this.settings.playlistDestination || "";
+		const folder = normalizePath(`/${dest}`);
+		await this.createFolder(this.app.vault, folder);
+
+		let created = 0;
+		let updated = 0;
+		let skipped = 0;
+
+		for (const playlist of playlists) {
+			if (!playlist.name || !playlist.name.trim()) {
+				console.warn(`Spotify Link: Skipping playlist with no name (id: ${playlist.id})`);
+				skipped++;
+				continue;
+			}
+			const content = `${processSinglePlaylist(playlist, template, this.settings)}\n`;
+			const safeName = playlist.name.replace(/[/\\:#[\]|^%.]/g, "-");
+			const filename = `${normalizePath(`${folder}/${safeName}`)}.md`;
+
+			const exists = await this.app.vault.adapter.exists(filename, true);
+			if (exists) {
+				await this.app.vault.modify(
+					this.app.vault.getAbstractFileByPath(filename) as TFile,
+					content,
+				);
+				updated++;
+			} else {
+				try {
+					await this.app.vault.create(filename, content);
+					created++;
+				} catch (e) {
+					new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+				}
+			}
+		}
+
+		const parts = [`${created + updated} playlist(s) processed`];
+		if (created > 0) parts.push(`${created} created`);
+		if (updated > 0) parts.push(`${updated} updated`);
+		if (skipped > 0) parts.push(`${skipped} skipped (no name)`);
+		new Notice(`Spotify Link: ${parts.join(", ")}.`, 5000);
+	}
+
+	async regeneratePlaylistNotes(
+		trackId: string,
+		cachedPlaylistNames?: string[],
+		cachedAllPlaylists?: PlaylistDetail[],
+	) {
+		if (!this.settings.autoRegeneratePlaylists || !this.settings.enablePlaylists) {
+			return;
+		}
+
+		try {
+			// Reuse cached playlist names if available, otherwise fetch
+			const matchingNames = cachedPlaylistNames && cachedPlaylistNames.length > 0
+				? cachedPlaylistNames
+				: await getPlaylistsForTrack(
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+					trackId,
+					this.settings.playlistConcurrency,
+				);
+
+			if (matchingNames.length === 0) return;
+
+			// Reuse cached playlists if available, otherwise fetch
+			const allPlaylists = cachedAllPlaylists && cachedAllPlaylists.length > 0
+				? cachedAllPlaylists
+				: await getAllPlaylists(
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+				);
+
+			const matchingPlaylists = allPlaylists.filter((pl: PlaylistDetail) =>
+				matchingNames.includes(pl.name),
+			);
+
+			if (matchingPlaylists.length === 0) return;
+
+			const template = await this.loadOrGetTemplate(
+				this.settings.templates[3],
+			);
+			const folder = normalizePath(`/${this.settings.playlistDestination ?? ""}`);
+			let regenerated = 0;
+
+			for (const playlist of matchingPlaylists) {
+				const safeName = playlist.name.replace(/[/\\:#[\]|^%.]/g, "-");
+				const filename = `${normalizePath(`${folder}/${safeName}`)}.md`;
+				const exists = await this.app.vault.adapter.exists(filename, true);
+
+				if (exists) {
+					const content = `${processSinglePlaylist(playlist, template, this.settings)}\n`;
+					await this.app.vault.modify(
+						this.app.vault.getAbstractFileByPath(filename) as TFile,
+						content,
+					);
+					regenerated++;
+				}
+			}
+
+			if (regenerated > 0) {
+				new Notice(
+					`Spotify Link: Regenerated ${regenerated} playlist note(s).`,
+					5000,
+				);
+			}
+		} catch (e) {
+			new Notice("[ERROR] Spotify Link Plugin: Failed to regenerate playlist notes: " + (e instanceof Error ? e.message : String(e)), 10000);
+		}
+	}
+
 	async createFile(parent: string, id: string) {
 		let content = "";
 		let track: CurrentlyPlayingTrack | RecentlyPlayed | string | null =
 			null;
 		let template_index = -1;
+		let cachedPlaylistNames: string[] = [];
 
 		if (
 			id === "create-file-for-currently-playing-episode" ||
@@ -192,6 +322,23 @@ export default class SpotifyLinkPlugin extends Plugin {
 				),
 				this.settings,
 			)}\n\n`;
+		} else if (
+			id === "create-file-for-all-playlists-using-template"
+		) {
+			template_index = 3;
+
+			const playlists = await getAllPlaylists(
+				this.settings.spotifyClientId,
+				this.settings.spotifyClientSecret,
+			);
+
+			content = `${processAllPlaylists(
+				playlists,
+				await this.loadOrGetTemplate(
+					this.settings.templates[template_index],
+				),
+				this.settings,
+			)}\n\n`;
 		} else {
 			track = await getCurrentlyPlayingTrack(
 				this.settings.spotifyClientId,
@@ -208,7 +355,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			) {
 				template_index = 0;
 			}
-			content = `${await processCurrentlyPlayingTrack(
+			const result = await processCurrentlyPlayingTrack(
 				this.settings.spotifyClientId,
 				this.settings.spotifyClientSecret,
 				track,
@@ -216,7 +363,9 @@ export default class SpotifyLinkPlugin extends Plugin {
 					this.settings.templates[template_index],
 				),
 				this.settings,
-			)}\n\n`;
+			);
+			content = `${result.content}\n\n`;
+			cachedPlaylistNames = result.playlistNames;
 		}
 
 		const filename = `${normalizePath(
@@ -235,6 +384,19 @@ export default class SpotifyLinkPlugin extends Plugin {
 			// Probably an already exists as the others should be handle correctly.
 			await this.autoOpen(filename);
 			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+		}
+
+		// Auto-regenerate playlist notes if a track was processed
+		if (
+			track &&
+			typeof track !== "string" &&
+			"item" in track &&
+			track.item?.type === "track"
+		) {
+			await this.regeneratePlaylistNotes(
+				(track.item as Track).id,
+				cachedPlaylistNames.length > 0 ? cachedPlaylistNames : undefined,
+			);
 		}
 	}
 
@@ -340,24 +502,26 @@ export default class SpotifyLinkPlugin extends Plugin {
 			id: "append-currently-playing-track-using-template",
 			name: "Append Spotify currently playing track using template",
 			editorCallback: async (editor: Editor) => {
-				await handleTemplateEditor(
+				const result = await handleTemplateEditor(
 					editor,
 					await this.loadOrGetTemplate(this.settings.templates[0]),
 					this.settings.spotifyClientId,
 					this.settings.spotifyClientSecret,
 					this.settings,
 				);
+				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId, result.playlistNames);
 			},
 		});
 		this.addCommand({
 			id: "append-currently-playing-track",
 			name: "Append Spotify currently playing track with timestamp",
 			editorCallback: async (editor: Editor) => {
-				await handleEditor(
+				const result = await handleEditor(
 					editor,
 					this.settings.spotifyClientId,
 					this.settings.spotifyClientSecret,
 				);
+				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId);
 			},
 		});
 		this.addCommand({
@@ -425,6 +589,50 @@ export default class SpotifyLinkPlugin extends Plugin {
 				await this.createFile(
 					this.settings.defaultDestination ?? "",
 					"create-file-for-recently-played-tracks-using-template",
+				);
+			},
+		});
+
+		// All Playlists
+		this.addCommand({
+			id: "create-file-for-all-playlists-using-template",
+			name: "Create file for all playlists using template",
+			callback: async () => {
+				if (!this.settings.enablePlaylists) {
+					new Notice("Spotify Link: Playlist features are disabled in settings.");
+					return;
+				}
+				await this.createFile(
+					this.settings.defaultDestination ?? "",
+					"create-file-for-all-playlists-using-template",
+				);
+			},
+		});
+		this.addCommand({
+			id: "create-individual-playlist-files-using-template",
+			name: "Create individual files for all playlists using template",
+			callback: async () => {
+				if (!this.settings.enablePlaylists) {
+					new Notice("Spotify Link: Playlist features are disabled in settings.");
+					return;
+				}
+				await this.createPlaylistFiles();
+			},
+		});
+		this.addCommand({
+			id: "append-all-playlists-using-template",
+			name: "Append all playlists using template",
+			editorCallback: async (editor: Editor) => {
+				if (!this.settings.enablePlaylists) {
+					new Notice("Spotify Link: Playlist features are disabled in settings.");
+					return;
+				}
+				await handlePlaylistsEditor(
+					editor,
+					await this.loadOrGetTemplate(this.settings.templates[3]),
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+					this.settings,
 				);
 			},
 		});

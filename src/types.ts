@@ -15,6 +15,9 @@ export type SpotifyLinkSettings = {
 	defaultImageSize: string;
 	defaultReleaseDateFormat: string;
 	playlistConcurrency: number;
+	enablePlaylists: boolean;
+	autoRegeneratePlaylists: boolean;
+	playlistDestination: string;
 };
 
 /**
@@ -27,6 +30,7 @@ export type TemplateOptions = {
 	defaultImageSize?: string;
 	defaultReleaseDateFormat?: string;
 	playlistConcurrency?: number;
+	enablePlaylists?: boolean;
 };
 
 //
@@ -277,6 +281,16 @@ export type Me = {
 
 export type TrackType = "track" | "episode" | "ad" | "unknown";
 
+export type TrackProcessingResult = {
+	content: string;
+	playlistNames: string[];
+};
+
+export type TrackCommandResult = {
+	trackId: string | null;
+	playlistNames: string[];
+};
+
 export type Artist = {
 	external_urls: {
 		spotify: string;
@@ -305,6 +319,18 @@ export type PlaylistSummary = {
 	id: string;
 	name: string;
 	owner: { id: string };
+};
+
+export type PlaylistDetail = {
+	id: string;
+	name: string;
+	description: string;
+	external_urls: { spotify: string };
+	images: { url: string; height: number; width: number }[];
+	owner: { id: string; display_name: string };
+	public: boolean;
+	collaborative: boolean;
+	tracks: { total: number };
 };
 
 export type RecentlyPlayed = {

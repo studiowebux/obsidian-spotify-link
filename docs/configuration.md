@@ -56,11 +56,12 @@ Client ID and Secret are stored unencrypted in plugin data. Avoid syncing to pub
 
 ### Templates
 
-Three template slots:
+Four template slots:
 
 1. **Template for song** - Track insertion format
 2. **Template for podcast** - Episode insertion format
 3. **Template for recently played tracks** - History format
+4. **Template for all playlists** - Per-playlist format (see [All Playlists Variables](templates.md#all-playlists-variables))
 
 Templates can be:
 
@@ -107,6 +108,31 @@ Path resolution attempts:
 - Tokens: `YYYY`, `MM`, `DD` (e.g. `YYYY` → `2024`, `MM/YYYY` → `03/2024`)
 - Can be overridden per-token: `{{ album_release|YYYY }}`
 
+### Playlists
+
+**Enable playlist features**
+- Toggle: Enable or disable all playlist-related commands and the `{{ playlists }}` template token
+- Default: `true`
+- When disabled, playlist commands show a notice and return early, and `{{ playlists }}` resolves to empty
+
+**Playlist destination**
+- Target folder for individual playlist files
+- Empty = vault root
+- Example: `Music/Playlists`
+- Can be overridden by the context menu (right-click → folder)
+
+**Auto-regenerate playlist notes**
+- Toggle: Automatically regenerate individual playlist note files when a track command runs
+- Default: `false`
+- When enabled, after adding a song, the plugin finds which playlists contain that track and updates the corresponding note files
+- Requires individual playlist files to exist first (use the "Create individual files for all playlists" command)
+- If the track template already uses `{{ playlists }}`, the playlist lookup result is cached and reused (no extra API call)
+
+**Playlist concurrency**
+- Number of playlists to check in parallel when resolving `{{ playlists }}`
+- Default: `10`
+- Higher values = faster but more concurrent API calls
+
 ### Context Menu
 
 Array of menu items for right-click integration:
@@ -151,14 +177,20 @@ Token persistence across Obsidian restarts via localStorage.
   spotifyState: "it-can-be-anything",
   templates: [
     "**Song Name:** {{ song_name }}\n**Album:** {{ album }}...",
-    "**Episode Name:** {{ episode_name }}\n**Description:** {{ description }}..."
+    "**Episode Name:** {{ episode_name }}\n**Description:** {{ description }}...",
+    "",
+    "**{{ playlist_name }}**\n{{ playlist_link }}\nTracks: {{ playlist_track_count }}..."
   ],
   defaultDestination: "",
   overwrite: false,
   autoOpen: false,
   appendArtistNames: false,
   defaultImageSize: "",
-  defaultReleaseDateFormat: ""
+  defaultReleaseDateFormat: "",
+  enablePlaylists: true,
+  autoRegeneratePlaylists: false,
+  playlistDestination: "",
+  playlistConcurrency: 10
 }
 ```
 

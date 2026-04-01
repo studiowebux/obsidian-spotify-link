@@ -1,12 +1,13 @@
 import { getArtist, getPlaylistsForTrack } from "./api";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
+import { getPlaylistMessage } from "./playlist";
 import {
 	getRecentlyPlayedTrackMessage,
 	getTrackMessage,
 	getTrackMessageTimestamp,
 	getTrackType,
 } from "./track";
-import { CurrentlyPlayingTrack, RecentlyPlayed, TemplateOptions, Track } from "./types";
+import { CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types";
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -32,7 +33,7 @@ export async function processCurrentlyPlayingTrack(
 	data: CurrentlyPlayingTrack,
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }}\n{{ timestamp }}`,
 	options?: TemplateOptions,
-): Promise<string> {
+): Promise<TrackProcessingResult> {
 	if (data && data.is_playing) {
 		if (getTrackType(data) === "track") {
 			const track = data.item as Track;
@@ -40,22 +41,26 @@ export async function processCurrentlyPlayingTrack(
 				getArtist(clientId, clientSecret, artist.id),
 			);
 
-			const needsPlaylists = /\{\{?\s*playlists\s*\}?\}/i.test(template);
+			const playlistsEnabled = options?.enablePlaylists !== false;
+			const needsPlaylists = playlistsEnabled && /\{\{?\s*playlists\s*\}?\}/i.test(template);
 			const playlistNames = needsPlaylists
 				? await getPlaylistsForTrack(clientId, clientSecret, track.id, options?.playlistConcurrency ?? 10)
 				: [];
 
-			return getTrackMessage(data, await Promise.all(artists), template, playlistNames, options);
+			return {
+				content: getTrackMessage(data, await Promise.all(artists), template, playlistNames, options),
+				playlistNames,
+			};
 		}
 		if (getTrackType(data) === "episode") {
-			return getEpisodeMessage(data, template, options);
+			return { content: getEpisodeMessage(data, template, options), playlistNames: [] };
 		}
 
 		throw new Error(
 			"The data received is not handle. You can request it by opening a GitHub issue and providing the track URL so that I can adjust the tool accordingly.",
 		);
 	}
-	return "No song is playing.";
+	return { content: "No song is playing.", playlistNames: [] };
 }
 
 export async function processRecentlyPlayedTracks(
@@ -85,4 +90,26 @@ export async function processRecentlyPlayedTracks(
 	}
 
 	return "Nothing fetched from Spotify API.";
+}
+
+export function processAllPlaylists(
+	playlists: PlaylistDetail[],
+	template: string,
+	options?: TemplateOptions,
+): string {
+	if (!playlists || playlists.length === 0) {
+		return "No playlists found.";
+	}
+
+	return playlists
+		.map((playlist) => getPlaylistMessage(playlist, template, options))
+		.join("\n");
+}
+
+export function processSinglePlaylist(
+	playlist: PlaylistDetail,
+	template: string,
+	options?: TemplateOptions,
+): string {
+	return getPlaylistMessage(playlist, template, options);
 }

@@ -22,6 +22,8 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 - Template support for inline and file-based templates
 - Support for both songs and podcasts
 - Customizable variable substitution system
+- List all playlists with metadata (single file or individual files)
+- Auto-regenerate playlist notes when adding songs (opt-in)
 
 ## Quick Start
 
@@ -39,6 +41,7 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 - `Append Spotify currently playing track using template` - Insert using custom template
 - `Append Spotify currently playing episode` - Insert podcast with timestamp
 - `Append Spotify currently playing episode using template` - Insert podcast using template
+- `Append all playlists using template` - Insert all playlists using template
 
 ### Create New Files
 
@@ -47,6 +50,8 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 - `Create file for currently playing episode` - New file for podcast
 - `Create file for currently playing episode using template` - Template-based podcast file
 - `Create file for recently played tracks using template` - Daily listening history
+- `Create file for all playlists using template` - All playlists in one file
+- `Create individual files for all playlists using template` - One file per playlist (required for auto-regenerate)
 
 ### Session Management
 
