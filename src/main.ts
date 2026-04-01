@@ -180,8 +180,13 @@ export default class SpotifyLinkPlugin extends Plugin {
 
 		let created = 0;
 		let updated = 0;
+		let skipped = 0;
 
 		for (const playlist of playlists) {
+			if (!playlist.name || !playlist.name.trim()) {
+				skipped++;
+				continue;
+			}
 			const content = `${processSinglePlaylist(playlist, template, this.settings)}\n`;
 			const safeName = playlist.name.replace(/[/\\:#[\]|^%.]/g, "-");
 			const filename = `${normalizePath(`${folder}/${safeName}`)}.md`;
@@ -203,10 +208,11 @@ export default class SpotifyLinkPlugin extends Plugin {
 			}
 		}
 
-		new Notice(
-			`Spotify Link: ${created} playlist file(s) created, ${updated} updated.`,
-			5000,
-		);
+		const parts = [`${created + updated} playlist(s) processed`];
+		if (created > 0) parts.push(`${created} created`);
+		if (updated > 0) parts.push(`${updated} updated`);
+		if (skipped > 0) parts.push(`${skipped} skipped (no name)`);
+		new Notice(`Spotify Link: ${parts.join(", ")}.`, 5000);
 	}
 
 	async regeneratePlaylistNotes(trackId: string, cachedPlaylistNames?: string[]) {
@@ -603,9 +609,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					new Notice("Spotify Link: Playlist features are disabled in settings.");
 					return;
 				}
-				await this.createPlaylistFiles(
-					this.settings.defaultDestination ?? "",
-				);
+				await this.createPlaylistFiles();
 			},
 		});
 		this.addCommand({
