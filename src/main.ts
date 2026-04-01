@@ -160,7 +160,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		return name;
 	}
 
-	async createPlaylistFiles(parent?: string) {
+	async createPlaylistFiles() {
 		const playlists = await getAllPlaylists(
 			this.settings.spotifyClientId,
 			this.settings.spotifyClientSecret,
@@ -174,7 +174,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		const template = await this.loadOrGetTemplate(
 			this.settings.templates[3],
 		);
-		const dest = parent || this.settings.playlistDestination || "";
+		const dest = this.settings.playlistDestination || "";
 		const folder = normalizePath(`/${dest}`);
 		await this.createFolder(this.app.vault, folder);
 
