@@ -16,6 +16,7 @@ export type SpotifyLinkSettings = {
 	defaultReleaseDateFormat: string;
 	playlistConcurrency: number;
 	enablePlaylists: boolean;
+	autoRegeneratePlaylists: boolean;
 };
 
 /**

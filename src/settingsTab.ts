@@ -391,6 +391,19 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ playlist_collaborative }}" });
 
 		new Setting(containerEl)
+			.setName("Auto-regenerate playlist notes")
+			.setDesc(
+				"When enabled, adding a song (via any track command) will automatically regenerate the individual playlist note files that contain that track. Requires individual playlist files to exist (use 'Create individual files for all playlists' first).",
+			)
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.autoRegeneratePlaylists);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.autoRegeneratePlaylists = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
 			.setName("Template for all playlists")
 			.setDesc(
 				"Define a custom template applied per playlist when using the 'all playlists' commands, or a path to your template definition",

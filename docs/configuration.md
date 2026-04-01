@@ -115,6 +115,13 @@ Path resolution attempts:
 - Default: `true`
 - When disabled, playlist commands show a notice and return early, and `{{ playlists }}` resolves to empty
 
+**Auto-regenerate playlist notes**
+- Toggle: Automatically regenerate individual playlist note files when a track command runs
+- Default: `false`
+- When enabled, after adding a song, the plugin finds which playlists contain that track and updates the corresponding note files
+- Requires individual playlist files to exist first (use the "Create individual files for all playlists" command)
+- If the track template already uses `{{ playlists }}`, the playlist lookup result is cached and reused (no extra API call)
+
 **Playlist concurrency**
 - Number of playlists to check in parallel when resolving `{{ playlists }}`
 - Default: `10`

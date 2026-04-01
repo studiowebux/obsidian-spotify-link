@@ -812,11 +812,141 @@ const visualResult = processAllPlaylists(
 console.log(visualResult);
 console.log("\n=== End Generated Markdown ===\n");
 
+// ===========================================================================
+// 14. processSinglePlaylist — single playlist output (used by individual files)
+// ===========================================================================
+
+console.log("\n--- processSinglePlaylist ---");
+
+function processSinglePlaylist(playlist, template, options = {}) {
+  return getPlaylistMessage(playlist, template, options);
+}
+
+{
+  const template = "# {{ playlist_name }}\n{{ playlist_link }}\nTracks: {{ playlist_track_count }}";
+  const result = processSinglePlaylist(PLAYLIST_1, template);
+  assert(
+    "processSinglePlaylist produces correct output",
+    result,
+    "# My Favorites\n[My Favorites](https://open.spotify.com/playlist/pl1)\nTracks: 142",
+  );
+  assertNoRemainingTokens("processSinglePlaylist — no leftovers", result);
+}
+
+{
+  const result = processSinglePlaylist(PLAYLIST_2, "{{ playlist_name }}");
+  assert("processSinglePlaylist for playlist 2", result, "Workout Mix");
+}
+
+{
+  const result = processSinglePlaylist(PLAYLIST_NO_IMAGES, "{{ playlist_cover_url }}");
+  assert("processSinglePlaylist handles missing images", result, "");
+}
+
+// ===========================================================================
+// 15. Filename sanitization (mirrors main.ts logic)
+// ===========================================================================
+
+console.log("\n--- Filename sanitization ---");
+
+function sanitizePlaylistName(name) {
+  return name.replace(/[/\\:#[\]|^%.]/g, "-");
+}
+
+const sanitizeCases = [
+  ["My Favorites", "My Favorites"],
+  ["Rock/Pop Mix", "Rock-Pop Mix"],
+  ["Playlist: Best Of", "Playlist- Best Of"],
+  ["Artist #1 Hits", "Artist -1 Hits"],
+  ["100% Energy", "100- Energy"],
+  ["[Chill] Vibes", "-Chill- Vibes"],
+  ["Back\\Slash", "Back-Slash"],
+  ["Pipe|Test", "Pipe-Test"],
+  ["Dot.Name", "Dot-Name"],
+  ["Normal Name 123", "Normal Name 123"],
+];
+
+for (const [input, expected] of sanitizeCases) {
+  assert(
+    `sanitize "${input}" → "${expected}"`,
+    sanitizePlaylistName(input),
+    expected,
+  );
+}
+
+// ===========================================================================
+// 16. Auto-regenerate guard logic
+// ===========================================================================
+
+console.log("\n--- Auto-regenerate guard logic ---");
+
+function shouldRegenerate(settings) {
+  return settings.autoRegeneratePlaylists === true && settings.enablePlaylists !== false;
+}
+
+assert(
+  "autoRegenerate=true, enablePlaylists=true → should regenerate",
+  shouldRegenerate({ autoRegeneratePlaylists: true, enablePlaylists: true }),
+  true,
+);
+
+assert(
+  "autoRegenerate=false, enablePlaylists=true → should NOT regenerate",
+  shouldRegenerate({ autoRegeneratePlaylists: false, enablePlaylists: true }),
+  false,
+);
+
+assert(
+  "autoRegenerate=true, enablePlaylists=false → should NOT regenerate",
+  shouldRegenerate({ autoRegeneratePlaylists: true, enablePlaylists: false }),
+  false,
+);
+
+assert(
+  "autoRegenerate=false, enablePlaylists=false → should NOT regenerate",
+  shouldRegenerate({ autoRegeneratePlaylists: false, enablePlaylists: false }),
+  false,
+);
+
+// ===========================================================================
+// 17. Cache reuse simulation
+// ===========================================================================
+
+console.log("\n--- Cache reuse logic ---");
+
+{
+  // Simulates the caching: if cachedPlaylistNames has entries, use them; otherwise fetch
+  function resolvePlaylistNames(cachedNames, fetchFn) {
+    return cachedNames && cachedNames.length > 0 ? cachedNames : fetchFn();
+  }
+
+  let fetchCalled = false;
+  const mockFetch = () => { fetchCalled = true; return ["Fetched Playlist"]; };
+
+  // With cache — should not fetch
+  fetchCalled = false;
+  const cached = resolvePlaylistNames(["Cached A", "Cached B"], mockFetch);
+  assert("cache hit returns cached names", cached.join(", "), "Cached A, Cached B");
+  assert("cache hit does not call fetch", fetchCalled, false);
+
+  // Without cache — should fetch
+  fetchCalled = false;
+  const fetched = resolvePlaylistNames([], mockFetch);
+  assert("cache miss calls fetch", fetchCalled, true);
+  assert("cache miss returns fetched names", fetched.join(", "), "Fetched Playlist");
+
+  // Undefined cache — should fetch
+  fetchCalled = false;
+  const undef = resolvePlaylistNames(undefined, mockFetch);
+  assert("undefined cache calls fetch", fetchCalled, true);
+  assert("undefined cache returns fetched names", undef.join(", "), "Fetched Playlist");
+}
+
 // ---------------------------------------------------------------------------
 // Summary
 // ---------------------------------------------------------------------------
 
-console.log(`${passed + failed} tests: ${passed} passed, ${failed} failed\n`);
+console.log(`\n${passed + failed} tests: ${passed} passed, ${failed} failed\n`);
 if (failed > 0) {
   if (typeof Deno !== "undefined") Deno.exit(1);
   else process.exit(1);

@@ -5,29 +5,39 @@ import {
   getCurrentlyPlayingTrackAsString,
 } from "./api";
 import { processAllPlaylists, processCurrentlyPlayingTrack } from "./output";
-import { TemplateOptions } from "./types";
+import { TemplateOptions, Track } from "./types";
 
 export async function handleEditor(
   editor: Editor,
   clientId: string,
   clientSecret: string,
-) {
+): Promise<TrackCommandResult> {
   try {
-    const track = await getCurrentlyPlayingTrackAsString(
+    const data = await getCurrentlyPlayingTrack(clientId, clientSecret);
+    const trackAsString = await getCurrentlyPlayingTrackAsString(
       clientId,
       clientSecret,
     );
     if (editor) {
       editor.replaceSelection(
-        `> ${track}` +
+        `> ${trackAsString}` +
           `\n> ${new Date().toDateString()} - ${new Date().toLocaleTimeString()}` +
           `\n\n`,
       );
     }
+    if (data?.item?.type === "track") {
+      return { trackId: (data.item as Track).id, playlistNames: [] };
+    }
   } catch (e) {
     new Notice(e instanceof Error ? e.message : String(e));
   }
+  return { trackId: null, playlistNames: [] };
 }
+
+export type TrackCommandResult = {
+  trackId: string | null;
+  playlistNames: string[];
+};
 
 export async function handleTemplateEditor(
   editor: Editor,
@@ -35,17 +45,20 @@ export async function handleTemplateEditor(
   clientId: string,
   clientSecret: string,
   options?: TemplateOptions,
-) {
+): Promise<TrackCommandResult> {
   try {
-    const track = await getCurrentlyPlayingTrack(clientId, clientSecret);
+    const data = await getCurrentlyPlayingTrack(clientId, clientSecret);
+    const result = await processCurrentlyPlayingTrack(clientId, clientSecret, data, template, options);
     if (editor) {
-      editor.replaceSelection(
-        `${await processCurrentlyPlayingTrack(clientId, clientSecret, track, template, options)}\n\n`,
-      );
+      editor.replaceSelection(`${result.content}\n\n`);
+    }
+    if (data?.item?.type === "track") {
+      return { trackId: (data.item as Track).id, playlistNames: result.playlistNames };
     }
   } catch (e) {
     new Notice(e instanceof Error ? e.message : String(e));
   }
+  return { trackId: null, playlistNames: [] };
 }
 
 export async function handlePlaylistsEditor(
