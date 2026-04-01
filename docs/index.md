@@ -22,6 +22,8 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 - Template support for inline and file-based templates
 - Support for both songs and podcasts
 - Customizable variable substitution system
+- List all playlists with metadata (single file or individual files)
+- Auto-regenerate playlist notes when adding songs (opt-in)
 
 ## Quick Start
 

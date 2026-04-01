@@ -177,14 +177,20 @@ Token persistence across Obsidian restarts via localStorage.
   spotifyState: "it-can-be-anything",
   templates: [
     "**Song Name:** {{ song_name }}\n**Album:** {{ album }}...",
-    "**Episode Name:** {{ episode_name }}\n**Description:** {{ description }}..."
+    "**Episode Name:** {{ episode_name }}\n**Description:** {{ description }}...",
+    "",
+    "**{{ playlist_name }}**\n{{ playlist_link }}\nTracks: {{ playlist_track_count }}..."
   ],
   defaultDestination: "",
   overwrite: false,
   autoOpen: false,
   appendArtistNames: false,
   defaultImageSize: "",
-  defaultReleaseDateFormat: ""
+  defaultReleaseDateFormat: "",
+  enablePlaylists: true,
+  autoRegeneratePlaylists: false,
+  playlistDestination: "",
+  playlistConcurrency: 10
 }
 ```
 
