@@ -391,6 +391,21 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ playlist_collaborative }}" });
 
 		new Setting(containerEl)
+			.setName("Playlist destination")
+			.setDesc(
+				"Folder for individual playlist files. Leave empty to use the vault root.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("e.g. Music/Playlists")
+					.setValue(this.plugin.settings.playlistDestination)
+					.onChange(async (value) => {
+						this.plugin.settings.playlistDestination = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
 			.setName("Auto-regenerate playlist notes")
 			.setDesc(
 				"When enabled, adding a song (via any track command) will automatically regenerate the individual playlist note files that contain that track. Requires individual playlist files to exist (use 'Create individual files for all playlists' first).",

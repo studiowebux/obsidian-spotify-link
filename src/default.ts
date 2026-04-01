@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 	],
 	enablePlaylists: true,
 	autoRegeneratePlaylists: false,
+	playlistDestination: "",
 	defaultDestination: "",
 	overwrite: false,
 	autoOpen: false,

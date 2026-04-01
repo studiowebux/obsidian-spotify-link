@@ -17,6 +17,7 @@ export type SpotifyLinkSettings = {
 	playlistConcurrency: number;
 	enablePlaylists: boolean;
 	autoRegeneratePlaylists: boolean;
+	playlistDestination: string;
 };
 
 /**

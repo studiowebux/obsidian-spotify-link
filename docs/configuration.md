@@ -115,6 +115,12 @@ Path resolution attempts:
 - Default: `true`
 - When disabled, playlist commands show a notice and return early, and `{{ playlists }}` resolves to empty
 
+**Playlist destination**
+- Target folder for individual playlist files
+- Empty = vault root
+- Example: `Music/Playlists`
+- Can be overridden by the context menu (right-click → folder)
+
 **Auto-regenerate playlist notes**
 - Toggle: Automatically regenerate individual playlist note files when a track command runs
 - Default: `false`
