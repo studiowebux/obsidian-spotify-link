@@ -470,6 +470,27 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("hr");
 
+		containerEl.createEl("h5", { text: "Reset" });
+		new Setting(containerEl)
+			.setName("Clear Spotify session")
+			.setDesc(
+				"Removes the stored Spotify access token, refresh token, and expiration from local storage. Use this to force a full re-authentication.",
+			)
+			.addButton((button) =>
+				button
+					.setButtonText("Clear session")
+					.setWarning()
+					.onClick(() => {
+						window.localStorage.removeItem("access_token");
+						window.localStorage.removeItem("refresh_token");
+						window.localStorage.removeItem("expires_in");
+						button.setButtonText("Cleared!");
+						button.setDisabled(true);
+					})
+			);
+
+		containerEl.createEl("hr");
+
 		containerEl.createEl("a", {
 			href: "https://studiowebux.github.io/obsidian-spotify-link",
 			text: "Official Plugin Documentation",
