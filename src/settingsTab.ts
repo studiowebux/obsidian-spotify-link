@@ -170,8 +170,10 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ genres_hashtag }}" })
 			.createEl("li", { text: "{{ followers }}" })
 			.createEl("li", { text: "{{ artist_image }}" })
-			.createEl("li", { text: "{{ popularity }}" })
-			.createEl("li", { text: "{{ artist_names }}" })
+			.createEl("li", { text: "{{ popularity }} — artist popularity (0–100)" })
+			.createEl("li", { text: "{{ track_popularity }} — track popularity (0–100)" })
+			.createEl("li", { text: "{{ album_popularity }} — album popularity (0–100, fetches extra API call)" })
+			.createEl("li", { text: "{{ artist_name }}" })
 			.createEl("li", { text: "{{ album_cover_url_large }}" })
 			.createEl("li", { text: "{{ album_cover_url_medium }}" })
 			.createEl("li", { text: "{{ album_cover_url_small }}" })
@@ -231,7 +233,7 @@ export default class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Template for song")
 			.setDesc(
-				"Define a custom template to print the currently playing song (Song only) or a path to your template definition",
+				"Template for the currently playing song, or a path to your template file. Also used by the 'Append / Create file for track by Spotify ID or URL' commands.",
 			)
 			.addTextArea((text) =>
 				text

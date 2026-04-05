@@ -1,5 +1,6 @@
 import { formatSpotifyDate, millisToMinutesAndSeconds, padZero } from "./utils";
-import { Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types";
+import { AlbumDetail, Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types";
+
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
 	return data.currently_playing_type;
@@ -29,14 +30,13 @@ export function getTrackMessageTimestamp(data: CurrentlyPlayingTrack) {
 }
 
 export function getTrackMessage(
-	data: CurrentlyPlayingTrack,
+	track: Track,
 	artists: Artist[],
 	template: string,
 	playlistNames: string[] = [],
 	options?: TemplateOptions,
+	album?: AlbumDetail,
 ) {
-	if (!isTrack(data)) throw new Error("Not a track.");
-	const track = data.item as Track;
 	const defaultImageSize = options?.defaultImageSize ?? "";
 	const defaultReleaseDateFormat = options?.defaultReleaseDateFormat ?? "";
 	return template
@@ -189,32 +189,19 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ genres }}|{{genres}}/g,
-			Array.from(new Set(artists?.map((artist) => artist.genres)))
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_array }}|{{genres_array}}/g,
-			Array.from(
-				new Set(
-					artists?.map((artist) =>
-						artist.genres?.map((g) => `"${g}"`)
-					),
-				),
-			)
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+				.map((g) => `"${g}"`)
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
-			Array.from(
-				new Set(
-					artists?.map((artist) =>
-						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`)
-					),
-				),
-			)
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+				.map((g) => `#${g.replace(/ /g, "_")}`)
 				.join(" "),
 		)
 		.replace(
@@ -236,6 +223,14 @@ export function getTrackMessage(
 					)
 					.join(", ")
 				: artists[0].popularity.toString(),
+		)
+		.replace(
+			/{{ track_popularity }}|{{track_popularity}}/g,
+			track.popularity.toString(),
+		)
+		.replace(
+			/{{ album_popularity }}|{{album_popularity}}/g,
+			album ? album.popularity.toString() : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -305,6 +300,7 @@ export function getRecentlyPlayedTrackMessage(
 	artists: Artist[],
 	template: string,
 	options?: TemplateOptions,
+	album?: AlbumDetail,
 ) {
 	const track = data.track as Track;
 	const defaultImageSize = options?.defaultImageSize ?? "";
@@ -467,32 +463,19 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ genres }}|{{genres}}/g,
-			Array.from(new Set(artists?.map((artist) => artist.genres)))
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_array }}|{{genres_array}}/g,
-			Array.from(
-				new Set(
-					artists?.map((artist) =>
-						artist.genres?.map((g) => `"${g}"`)
-					),
-				),
-			)
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+				.map((g) => `"${g}"`)
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
-			Array.from(
-				new Set(
-					artists?.map((artist) =>
-						artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`)
-					),
-				),
-			)
-				.flat(Infinity)
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+				.map((g) => `#${g.replace(/ /g, "_")}`)
 				.join(" "),
 		)
 		.replace(
@@ -514,6 +497,14 @@ export function getRecentlyPlayedTrackMessage(
 					)
 					.join(", ")
 				: artists[0].popularity.toString(),
+		)
+		.replace(
+			/{{ track_popularity }}|{{track_popularity}}/g,
+			track.popularity.toString(),
+		)
+		.replace(
+			/{{ album_popularity }}|{{album_popularity}}/g,
+			album ? album.popularity.toString() : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,

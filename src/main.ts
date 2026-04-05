@@ -1,9 +1,12 @@
 import {
+	App,
 	Editor,
 	Menu,
 	MenuItem,
+	Modal,
 	Notice,
 	Plugin,
+	Setting,
 	TFile,
 	type Vault,
 	addIcon,
@@ -39,8 +42,45 @@ import {
 	processCurrentlyPlayingTrack,
 	processRecentlyPlayedTracks,
 	processSinglePlaylist,
+	processTrackById,
 } from "./output";
 import { isPath } from "./utils";
+
+class TrackInputModal extends Modal {
+	private value = "";
+	private readonly onSubmit: (value: string) => void;
+
+	constructor(app: App, onSubmit: (value: string) => void) {
+		super(app);
+		this.onSubmit = onSubmit;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("h3", { text: "Spotify Track ID or URL" });
+		new Setting(contentEl)
+			.setName("Track")
+			.setDesc("Paste a Spotify track URL or bare track ID")
+			.addText((text) =>
+				text
+					.setPlaceholder("https://open.spotify.com/track/...")
+					.onChange((value) => { this.value = value; }),
+			);
+		new Setting(contentEl).addButton((btn) =>
+			btn
+				.setButtonText("Insert")
+				.setCta()
+				.onClick(() => {
+					this.close();
+					this.onSubmit(this.value);
+				}),
+		);
+	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
+}
 
 export default class SpotifyLinkPlugin extends Plugin {
 	settings!: SpotifyLinkSettings;
@@ -522,6 +562,65 @@ export default class SpotifyLinkPlugin extends Plugin {
 					this.settings.spotifyClientSecret,
 				);
 				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId);
+			},
+		});
+		this.addCommand({
+			id: "append-track-by-id-using-template",
+			name: "Append track by Spotify ID or URL using template",
+			editorCallback: async (editor: Editor) => {
+				new TrackInputModal(this.app, async (trackIdOrUrl) => {
+					if (!trackIdOrUrl) return;
+					try {
+						const result = await processTrackById(
+							this.settings.spotifyClientId,
+							this.settings.spotifyClientSecret,
+							trackIdOrUrl,
+							await this.loadOrGetTemplate(this.settings.templates[0]),
+							this.settings,
+						);
+						editor.replaceSelection(`${result.content}\n\n`);
+						if (result.playlistNames.length > 0) {
+							await this.regeneratePlaylistNotes(trackIdOrUrl, result.playlistNames);
+						}
+					} catch (e) {
+						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+					}
+				}).open();
+			},
+		});
+		this.addCommand({
+			id: "create-file-for-track-by-id-using-template",
+			name: "Create file for track by Spotify ID or URL using template",
+			callback: async () => {
+				new TrackInputModal(this.app, async (trackIdOrUrl) => {
+					if (!trackIdOrUrl) return;
+					try {
+						const result = await processTrackById(
+							this.settings.spotifyClientId,
+							this.settings.spotifyClientSecret,
+							trackIdOrUrl,
+							await this.loadOrGetTemplate(this.settings.templates[0]),
+							this.settings,
+						);
+						const content = `${result.content}\n\n`;
+						const filename = `${normalizePath(
+							`/${this.settings.defaultDestination ?? ""}/${trackIdOrUrl.split("/").pop()?.split("?")[0] ?? new Date().toISOString()}`,
+						).replace(/[:|.]/g, "_")}.md`;
+						const folder = filename.substring(0, filename.lastIndexOf("/"));
+						await this.createFolder(this.app.vault, folder);
+						try {
+							await this.app.vault.create(filename, content);
+							await this.autoOpen(filename);
+						} catch (e) {
+							const exists = await this.app.vault.adapter.exists(filename, true);
+							await this.overwrite(filename, content, exists);
+							await this.autoOpen(filename);
+							new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+						}
+					} catch (e) {
+						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+					}
+				}).open();
 			},
 		});
 		this.addCommand({

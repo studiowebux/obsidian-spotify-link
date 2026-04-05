@@ -108,6 +108,20 @@ Path resolution attempts:
 - Tokens: `YYYY`, `MM`, `DD` (e.g. `YYYY` → `2024`, `MM/YYYY` → `03/2024`)
 - Can be overridden per-token: `{{ album_release|YYYY }}`
 
+### New Template Tokens (v1.14.2)
+
+The following tokens are available in the **song** and **recently played** templates:
+
+| Token | Description |
+|---|---|
+| `{{ track_popularity }}` | Track popularity score 0–100 (Spotify's score for the track) |
+| `{{ album_popularity }}` | Album popularity score 0–100. Triggers a separate `GET /v1/albums/{id}` call — only fetched when present in the template |
+| `{{ genres }}` | Comma-separated genres, deduplicated across all artists |
+| `{{ genres_array }}` | Quoted genre list: `"genre1", "genre2"`, deduplicated |
+| `{{ genres_hashtag }}` | Hashtag format: `#genre_one #genre_two`, deduplicated |
+
+> **Note on `{{ popularity }}`:** this token returns *artist* popularity (unchanged). Use `{{ track_popularity }}` for the track's own score.
+
 ### Playlists
 
 **Enable playlist features**
@@ -194,6 +208,13 @@ Token persistence across Obsidian restarts via localStorage.
 }
 ```
 
+### Reset
+
+**Clear Spotify session**
+- Removes `access_token`, `refresh_token`, and `expires_in` from localStorage
+- Use this to force a full re-authentication (e.g. after changing scopes, or when troubleshooting token issues)
+- After clearing, click the Spotify ribbon icon to re-authenticate
+
 ## Troubleshooting
 
 **Connection fails**
@@ -203,7 +224,7 @@ Token persistence across Obsidian restarts via localStorage.
 
 **Token expired**
 - Use "Refresh session" command
-- Check localStorage for `access_token`
+- Or use "Clear Spotify session" in settings for a full reset
 
 **Template not found**
 - Verify path relative to vault root

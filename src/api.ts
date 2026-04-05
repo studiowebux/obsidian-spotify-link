@@ -1,6 +1,7 @@
 import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
 import {
 	AccessTokenResponse,
+	AlbumDetail,
 	Artist,
 	AuthorizationCodeResponse,
 	CurrentlyPlayingTrack,
@@ -10,6 +11,7 @@ import {
 	RecentlyPlayed,
 	RefreshTokenResponse,
 	SpotifyAuthCallback,
+	Track,
 } from "./types";
 import { prepareData } from "./utils";
 import { processCurrentlyPlayingTrackInput } from "./output";
@@ -154,6 +156,34 @@ export async function getCurrentlyPlayingTrack(
 	}
 }
 
+export async function getTrack(
+	clientId: string,
+	clientSecret: string,
+	trackIdOrUrl: string,
+): Promise<Track> {
+	const token = await getAccessToken(clientId, clientSecret);
+	// Accept full Spotify URLs like https://open.spotify.com/track/ID?si=... or bare IDs
+	const id = trackIdOrUrl.includes("spotify.com/track/")
+		? trackIdOrUrl.split("spotify.com/track/")[1].split(/[?#]/)[0]
+		: trackIdOrUrl.trim();
+
+	try {
+		const response: RequestUrlResponse = await requestUrl({
+			url: `${SPOTIFY_API_BASE_ADDRESS}/tracks/${id}`,
+			method: "GET",
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		const { json } = response;
+		if (response.status !== 200) {
+			throw new Error(json?.error?.message || response.status);
+		}
+		if (!json) throw new Error("Unable to get the track.");
+		return json as Track;
+	} catch (e) {
+		throw new Error("Unable to get the track.");
+	}
+}
+
 export async function getCurrentlyPlayingTrackAsString(
 	clientId: string,
 	clientSecret: string,
@@ -207,6 +237,30 @@ export async function getArtist(
 		return artist;
 	} catch (e) {
 		throw new Error("Unable to get the artist.");
+	}
+}
+
+export async function getAlbum(
+	clientId: string,
+	clientSecret: string,
+	albumId: string,
+): Promise<AlbumDetail> {
+	const token = await getAccessToken(clientId, clientSecret);
+
+	try {
+		const response: RequestUrlResponse = await requestUrl({
+			url: `${SPOTIFY_API_BASE_ADDRESS}/albums/${albumId}`,
+			method: "GET",
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		const { json } = response;
+		if (response.status !== 200) {
+			throw new Error(json?.error?.message || response.status);
+		}
+		if (!json) throw new Error("Unable to get the album.");
+		return { id: json.id, name: json.name, popularity: json.popularity } as AlbumDetail;
+	} catch (e) {
+		throw new Error("Unable to get the album.");
 	}
 }
 

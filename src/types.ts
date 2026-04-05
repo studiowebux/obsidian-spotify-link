@@ -333,6 +333,12 @@ export type PlaylistDetail = {
 	tracks: { total: number };
 };
 
+export type AlbumDetail = {
+	id: string;
+	name: string;
+	popularity: number;
+};
+
 export type RecentlyPlayed = {
 	limit: number;
 	next: string | null;

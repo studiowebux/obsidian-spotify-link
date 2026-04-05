@@ -93,13 +93,15 @@ Output: `#Artist_One #Artist_Two`
 **Artist Metadata**
 
 - `{{ followers }}` - Follower count (single: number, multiple: "Name: count")
-- `{{ popularity }}` - Popularity score 0-100
+- `{{ popularity }}` - Artist popularity score 0–100 (single: number, multiple: "Name: score")
+- `{{ track_popularity }}` - Track popularity score 0–100 (Spotify's score for the track itself)
+- `{{ album_popularity }}` - Album popularity score 0–100. Requires a separate API call (`GET /v1/albums/{id}`) — only fetched when the token is present in the template
 - `{{ artist_image }}` - Artist images as markdown image (accepts inline size override, see [Image dimensions](#image-dimensions))
 - `{{ artist_image_link }}` - Artist images as markdown link (no `!` prefix)
 - `{{ artist_image_url }}` - Artist image URLs (plain text)
-- `{{ genres }}` - Comma-separated genres
-- `{{ genres_array }}` - Quoted genre array: `"genre1", "genre2"`
-- `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`
+- `{{ genres }}` - Comma-separated genres, deduplicated across all artists
+- `{{ genres_array }}` - Quoted genre array: `"genre1", "genre2"`, deduplicated
+- `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`, deduplicated
 
 **Playlists**
 
@@ -228,6 +230,15 @@ Inside a Markdown table (escaped pipe):
 ```
 
 The *Default image size* setting (e.g. `200x200`) applies to all cover tokens unless overridden inline. See [Image dimensions](#image-dimensions) for details.
+
+### Track by ID / URL
+
+All track variables are available when using the **"Append track by Spotify ID or URL"** or **"Create file for track by Spotify ID or URL"** commands. These commands accept:
+
+- A full Spotify track URL: `https://open.spotify.com/track/4iV5W9uYEdYUVa79Axb7Rh`
+- A bare track ID: `4iV5W9uYEdYUVa79Axb7Rh`
+
+The same song template (slot 1) is used. `{{ timestamp }}` reflects the time of insertion, not playback. `{{ playlists }}` is supported if playlist features are enabled.
 
 ### Recently Played Variables
 
@@ -362,7 +373,7 @@ Template automatically adapts based on artist count.
 
 ### Genre Deduplication
 
-Genres across multiple artists are deduplicated automatically.
+Genres are collected from all artists on the track and deduplicated automatically. Since Spotify assigns genres to artists (not to tracks directly), a track with two artists sharing a genre will still list that genre only once.
 
 ### Timestamp Formats
 
