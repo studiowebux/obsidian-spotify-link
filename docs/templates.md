@@ -100,8 +100,8 @@ Output: `#Artist_One #Artist_Two`
 - `{{ artist_image_link }}` - Artist images as markdown link (no `!` prefix)
 - `{{ artist_image_url }}` - Artist image URLs (plain text)
 - `{{ genres }}` - Comma-separated genres, deduplicated across all artists
-- `{{ genres_array }}` - Quoted genre array: `"genre1", "genre2"`, deduplicated
-- `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`, deduplicated
+- `{{ genres_array }}` - Genre list formatted for YAML/Dataview arrays: `"genre1", "genre2"`, deduplicated across all artists
+- `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`, deduplicated across all artists
 
 **Playlists**
 

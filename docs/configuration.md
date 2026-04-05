@@ -108,20 +108,6 @@ Path resolution attempts:
 - Tokens: `YYYY`, `MM`, `DD` (e.g. `YYYY` → `2024`, `MM/YYYY` → `03/2024`)
 - Can be overridden per-token: `{{ album_release|YYYY }}`
 
-### New Template Tokens (v1.14.2)
-
-The following tokens are available in the **song** and **recently played** templates:
-
-| Token | Description |
-|---|---|
-| `{{ track_popularity }}` | Track popularity score 0–100 (Spotify's score for the track) |
-| `{{ album_popularity }}` | Album popularity score 0–100. Triggers a separate `GET /v1/albums/{id}` call — only fetched when present in the template |
-| `{{ genres }}` | Comma-separated genres, deduplicated across all artists |
-| `{{ genres_array }}` | Quoted genre list: `"genre1", "genre2"`, deduplicated |
-| `{{ genres_hashtag }}` | Hashtag format: `#genre_one #genre_two`, deduplicated |
-
-> **Note on `{{ popularity }}`:** this token returns *artist* popularity (unchanged). Use `{{ track_popularity }}` for the track's own score.
-
 ### Playlists
 
 **Enable playlist features**
@@ -149,20 +135,22 @@ The following tokens are available in the **song** and **recently played** templ
 
 ### Context Menu
 
-Array of menu items for right-click integration:
+Each item can be toggled on or off in **Plugin Settings → Context Menu**. Changes take effect after reloading the plugin.
 
-```typescript
-{
-  name: string,
-  enabled: boolean,
-  id: string
-}
-```
+Right-clicking a **file** creates the new note in that file's parent folder. Right-clicking a **folder** creates it inside that folder.
 
-Default items:
-- Create file for currently playing episode (with/without template)
-- Create file for currently playing track (with/without template)
-- Create file for recently played tracks
+Default items and their default state:
+
+| Item | Default |
+|---|---|
+| Create file for currently playing episode using template | enabled |
+| Create file for currently playing episode | enabled |
+| Create file for currently playing track using template | enabled |
+| Create file for currently playing track | enabled |
+| Create file for recently played tracks using template | enabled |
+| Create file for track by Spotify ID or URL using template | disabled |
+
+New items added in future versions are automatically merged into existing settings (no manual reset required).
 
 ## Initial Connection
 
@@ -225,6 +213,11 @@ Token persistence across Obsidian restarts via localStorage.
 **Token expired**
 - Use "Refresh session" command
 - Or use "Clear Spotify session" in settings for a full reset
+
+**429 Too Many Requests**
+- Spotify rate-limits API calls — there is nothing the plugin can do when this occurs
+- Reduce the number of requests: lower *Playlist concurrency*, disable *Auto-regenerate playlist notes*, avoid triggering multiple commands in quick succession
+- Wait a moment and try again
 
 **Template not found**
 - Verify path relative to vault root

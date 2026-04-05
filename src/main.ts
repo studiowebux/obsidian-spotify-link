@@ -7,7 +7,9 @@ import {
 	Notice,
 	Plugin,
 	Setting,
+	TAbstractFile,
 	TFile,
+	TFolder,
 	type Vault,
 	addIcon,
 	normalizePath,
@@ -25,6 +27,7 @@ import {
 	getArtist,
 	getPlaylistsForTrack,
 	getSpotifyUrl,
+	getTrack,
 	handleCallback,
 	requestRefreshToken,
 } from "./api";
@@ -126,11 +129,18 @@ export default class SpotifyLinkPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
+		const saved = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+
+		// Merge any new default menu items that don't exist in saved settings.
+		// Object.assign replaces the menu array entirely, so new items added to
+		// DEFAULT_SETTINGS would never appear for existing users without this.
+		const savedIds = new Set(this.settings.menu.map((m) => m.id));
+		for (const item of DEFAULT_SETTINGS.menu) {
+			if (!savedIds.has(item.id)) {
+				this.settings.menu.push({ ...item });
+			}
+		}
 	}
 
 	async autoOpen(filename: string) {
@@ -175,15 +185,21 @@ export default class SpotifyLinkPlugin extends Plugin {
 		}
 	}
 
-	async getName(track?: CurrentlyPlayingTrack): Promise<string> {
+	async getName(track?: CurrentlyPlayingTrack | Track): Promise<string> {
 		let name = new Date().toISOString();
 
-		if (track?.item?.name) {
-			name = track?.item?.name;
+		// Accept either a raw Track or a CurrentlyPlayingTrack wrapper
+		const item: Track | undefined =
+			track && "item" in track
+				? (track.item as Track)
+				: (track as Track | undefined);
+
+		if (item?.name) {
+			name = item.name;
 
 			if (this.settings.appendArtistNames) {
 				const artists = await Promise.all(
-					(track.item as Track).artists.map((artist) =>
+					item.artists.map((artist) =>
 						getArtist(
 							this.settings.spotifyClientId,
 							this.settings.spotifyClientSecret,
@@ -328,6 +344,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		let content = "";
 		let track: CurrentlyPlayingTrack | RecentlyPlayed | string | null =
 			null;
+		let trackForName: Track | undefined = undefined;
 		let template_index = -1;
 		let cachedPlaylistNames: string[] = [];
 
@@ -379,6 +396,32 @@ export default class SpotifyLinkPlugin extends Plugin {
 				),
 				this.settings,
 			)}\n\n`;
+		} else if (id === "create-file-for-track-by-id-using-template") {
+			await new Promise<void>((resolve) => {
+				new TrackInputModal(this.app, async (trackIdOrUrl) => {
+					if (!trackIdOrUrl) { resolve(); return; }
+					try {
+						const fetchedTrack = await getTrack(
+							this.settings.spotifyClientId,
+							this.settings.spotifyClientSecret,
+							trackIdOrUrl,
+						);
+						trackForName = fetchedTrack;
+						const result = await processTrackById(
+							this.settings.spotifyClientId,
+							this.settings.spotifyClientSecret,
+							trackIdOrUrl,
+							await this.loadOrGetTemplate(this.settings.templates[0]),
+							this.settings,
+						);
+						content = `${result.content}\n\n`;
+						cachedPlaylistNames = result.playlistNames;
+					} catch (e) {
+						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+					}
+					resolve();
+				}).open();
+			});
 		} else {
 			track = await getCurrentlyPlayingTrack(
 				this.settings.spotifyClientId,
@@ -408,8 +451,10 @@ export default class SpotifyLinkPlugin extends Plugin {
 			cachedPlaylistNames = result.playlistNames;
 		}
 
+		if (!content) return;
+
 		const filename = `${normalizePath(
-			`/${parent}/${await this.getName(track as CurrentlyPlayingTrack)}`,
+			`/${parent}/${await this.getName(trackForName ?? track as CurrentlyPlayingTrack)}`,
 		).replace(/[:|.]/g, "_")}.md`;
 
 		const exists = await this.app.vault.adapter.exists(filename, true);
@@ -507,10 +552,34 @@ export default class SpotifyLinkPlugin extends Plugin {
 		// USER INTERACTION
 		//
 
-		//
-		// Episode focused
-		//
+		const dest = () => this.settings.defaultDestination ?? "";
 
+		const createFileCmd = (id: string, name: string) => {
+			this.addCommand({
+				id,
+				name,
+				callback: async () => { await this.createFile(dest(), id); },
+			});
+		};
+
+		const createFileCmdWithEditor = (id: string, name: string) => {
+			this.addCommand({
+				id,
+				name,
+				callback: async () => { await this.createFile(dest(), id); },
+				editorCallback: async (_editor: Editor) => { await this.createFile(dest(), id); },
+			});
+		};
+
+		const playlistGuard = () => {
+			if (!this.settings.enablePlaylists) {
+				new Notice("Spotify Link: Playlist features are disabled in settings.");
+				return false;
+			}
+			return true;
+		};
+
+		// Episode
 		this.addCommand({
 			id: "append-currently-playing-episode-using-template",
 			name: "Append Spotify currently playing episode using template",
@@ -528,16 +597,11 @@ export default class SpotifyLinkPlugin extends Plugin {
 			id: "append-currently-playing-episode",
 			name: "Append Spotify currently playing episode with timestamp",
 			editorCallback: async (editor: Editor) => {
-				await handleEditor(
-					editor,
-					this.settings.spotifyClientId,
-					this.settings.spotifyClientSecret,
-				);
+				await handleEditor(editor, this.settings.spotifyClientId, this.settings.spotifyClientSecret);
 			},
 		});
-		//
-		// Song focused
-		//
+
+		// Track
 		this.addCommand({
 			id: "append-currently-playing-track-using-template",
 			name: "Append Spotify currently playing track using template",
@@ -556,11 +620,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			id: "append-currently-playing-track",
 			name: "Append Spotify currently playing track with timestamp",
 			editorCallback: async (editor: Editor) => {
-				const result = await handleEditor(
-					editor,
-					this.settings.spotifyClientId,
-					this.settings.spotifyClientSecret,
-				);
+				const result = await handleEditor(editor, this.settings.spotifyClientId, this.settings.spotifyClientSecret);
 				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId);
 			},
 		});
@@ -588,50 +648,20 @@ export default class SpotifyLinkPlugin extends Plugin {
 				}).open();
 			},
 		});
-		this.addCommand({
-			id: "create-file-for-track-by-id-using-template",
-			name: "Create file for track by Spotify ID or URL using template",
-			callback: async () => {
-				new TrackInputModal(this.app, async (trackIdOrUrl) => {
-					if (!trackIdOrUrl) return;
-					try {
-						const result = await processTrackById(
-							this.settings.spotifyClientId,
-							this.settings.spotifyClientSecret,
-							trackIdOrUrl,
-							await this.loadOrGetTemplate(this.settings.templates[0]),
-							this.settings,
-						);
-						const content = `${result.content}\n\n`;
-						const filename = `${normalizePath(
-							`/${this.settings.defaultDestination ?? ""}/${trackIdOrUrl.split("/").pop()?.split("?")[0] ?? new Date().toISOString()}`,
-						).replace(/[:|.]/g, "_")}.md`;
-						const folder = filename.substring(0, filename.lastIndexOf("/"));
-						await this.createFolder(this.app.vault, folder);
-						try {
-							await this.app.vault.create(filename, content);
-							await this.autoOpen(filename);
-						} catch (e) {
-							const exists = await this.app.vault.adapter.exists(filename, true);
-							await this.overwrite(filename, content, exists);
-							await this.autoOpen(filename);
-							new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
-						}
-					} catch (e) {
-						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
-					}
-				}).open();
-			},
-		});
+
+		createFileCmd("create-file-for-currently-playing-episode-using-template", "Create file for currently playing episode using template");
+		createFileCmd("create-file-for-currently-playing-episode", "Create file for currently playing episode");
+		createFileCmd("create-file-for-currently-playing-track-using-template", "Create file for currently playing track using template");
+		createFileCmd("create-file-for-currently-playing-track", "Create file for currently playing track");
+		createFileCmd("create-file-for-recently-played-tracks-using-template", "Create file for recently played tracks using template");
+		createFileCmdWithEditor("create-file-for-track-by-id-using-template", "Create file for track by Spotify ID or URL using template");
+
 		this.addCommand({
 			id: "refresh-session",
 			name: "Refresh session",
 			callback: async () => {
 				try {
-					await requestRefreshToken(
-						this.settings.spotifyClientId,
-						this.settings.spotifyClientSecret,
-					);
+					await requestRefreshToken(this.settings.spotifyClientId, this.settings.spotifyClientSecret);
 					new Notice(`Spotify Link Plugin: Access Refreshed`);
 				} catch (e) {
 					new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
@@ -639,82 +669,20 @@ export default class SpotifyLinkPlugin extends Plugin {
 			},
 		});
 
-		this.addCommand({
-			id: "create-file-for-currently-playing-episode-using-template",
-			name: "Create file for currently playing episode using template",
-			callback: async () => {
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-currently-playing-episode-using-template",
-				);
-			},
-		});
-		this.addCommand({
-			id: "create-file-for-currently-playing-episode",
-			name: "Create file for currently playing episode",
-			callback: async () => {
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-currently-playing-episode",
-				);
-			},
-		});
-		this.addCommand({
-			id: "create-file-for-currently-playing-track-using-template",
-			name: "Create file for currently playing track using template",
-			callback: async () => {
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-currently-playing-track-using-template",
-				);
-			},
-		});
-		this.addCommand({
-			id: "create-file-for-currently-playing-track",
-			name: "Create file for currently playing track",
-			callback: async () => {
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-currently-playing-track",
-				);
-			},
-		});
-
-		// Recently Played tracks
-		this.addCommand({
-			id: "create-file-for-recently-played-tracks-using-template",
-			name: "Create file for recently played tracks using template",
-			callback: async () => {
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-recently-played-tracks-using-template",
-				);
-			},
-		});
-
-		// All Playlists
+		// Playlists
 		this.addCommand({
 			id: "create-file-for-all-playlists-using-template",
 			name: "Create file for all playlists using template",
 			callback: async () => {
-				if (!this.settings.enablePlaylists) {
-					new Notice("Spotify Link: Playlist features are disabled in settings.");
-					return;
-				}
-				await this.createFile(
-					this.settings.defaultDestination ?? "",
-					"create-file-for-all-playlists-using-template",
-				);
+				if (!playlistGuard()) return;
+				await this.createFile(dest(), "create-file-for-all-playlists-using-template");
 			},
 		});
 		this.addCommand({
 			id: "create-individual-playlist-files-using-template",
 			name: "Create individual files for all playlists using template",
 			callback: async () => {
-				if (!this.settings.enablePlaylists) {
-					new Notice("Spotify Link: Playlist features are disabled in settings.");
-					return;
-				}
+				if (!playlistGuard()) return;
 				await this.createPlaylistFiles();
 			},
 		});
@@ -722,10 +690,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			id: "append-all-playlists-using-template",
 			name: "Append all playlists using template",
 			editorCallback: async (editor: Editor) => {
-				if (!this.settings.enablePlaylists) {
-					new Notice("Spotify Link: Playlist features are disabled in settings.");
-					return;
-				}
+				if (!playlistGuard()) return;
 				await handlePlaylistsEditor(
 					editor,
 					await this.loadOrGetTemplate(this.settings.templates[3]),
@@ -742,11 +707,12 @@ export default class SpotifyLinkPlugin extends Plugin {
 		if (this.settings?.menu) {
 			for (const customMenu of this.settings.menu) {
 				if (!customMenu.enabled) return;
-				const menuCreateFile = (menu: Menu, file: TFile) => {
+				const menuCreateFile = (menu: Menu, file: TAbstractFile) => {
+					const parent = file instanceof TFolder ? file.path : (file.parent?.path ?? "");
 					menu.addItem((item: MenuItem) => {
 						item.setTitle(customMenu.name).onClick(async () => {
 							try {
-								await this.createFile(file.path, customMenu.id);
+								await this.createFile(parent, customMenu.id);
 							} catch (e) {
 								new Notice(
 									`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`,

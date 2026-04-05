@@ -37,6 +37,11 @@ export const DEFAULT_SETTINGS: SpotifyLinkSettings = {
 			enabled: true,
 			id: "create-file-for-recently-played-tracks-using-template",
 		},
+		{
+			name: "Create file for track by Spotify ID or URL using template",
+			enabled: false,
+			id: "create-file-for-track-by-id-using-template",
+		},
 	],
 	enablePlaylists: true,
 	autoRegeneratePlaylists: false,

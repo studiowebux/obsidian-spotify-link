@@ -439,6 +439,26 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("hr");
 
+		containerEl.createEl("h5", { text: "Context Menu" });
+		containerEl.createEl("p", {
+			text: "Toggle which items appear when right-clicking a file or folder. Changes take effect after reloading the plugin.",
+		});
+		if (this.plugin.settings.menu) {
+			for (const menuItem of this.plugin.settings.menu) {
+				new Setting(containerEl)
+					.setName(menuItem.name)
+					.addToggle((toggle) => {
+						toggle.setValue(menuItem.enabled);
+						toggle.onChange(async (value: boolean) => {
+							menuItem.enabled = value;
+							await this.plugin.saveSettings();
+						});
+					});
+			}
+		}
+
+		containerEl.createEl("hr");
+
 		containerEl.createEl("h5", { text: "Spotify Integration (Advanced)" });
 		new Setting(containerEl)
 			.setName("Playlist concurrency")
