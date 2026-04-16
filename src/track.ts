@@ -233,6 +233,18 @@ export function getTrackMessage(
 			album ? (album.popularity ?? 0).toString() : "",
 		)
 		.replace(
+			/{{ album_genres }}|{{album_genres}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+		)
+		.replace(
+			/{{ album_genres_array }}|{{album_genres_array}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+		)
+		.replace(
+			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
+		)
+		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
 			artists
 				?.map((artist) => `[${artist.name}](${artist.images[0]?.url})`)
@@ -505,6 +517,18 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
 			album ? (album.popularity ?? 0).toString() : "",
+		)
+		.replace(
+			/{{ album_genres }}|{{album_genres}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+		)
+		.replace(
+			/{{ album_genres_array }}|{{album_genres_array}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+		)
+		.replace(
+			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,

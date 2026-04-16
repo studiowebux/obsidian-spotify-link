@@ -27,7 +27,7 @@ function formatSpotifyDate(date, format) {
 // Template processor (mirrors getTrackMessage in track.ts)
 // ---------------------------------------------------------------------------
 
-function processTemplate(template, track, artists, options = {}) {
+function processTemplate(template, track, artists, options = {}, album = undefined) {
   const defaultImageSize = options.defaultImageSize ?? "";
   const defaultReleaseDateFormat = options.defaultReleaseDateFormat ?? "";
 
@@ -161,6 +161,18 @@ function processTemplate(template, track, artists, options = {}) {
     .replace(
       /{{ track_popularity }}|{{track_popularity}}/g,
       (track.popularity ?? 0).toString(),
+    )
+    .replace(
+      /{{ album_genres }}|{{album_genres}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+    )
+    .replace(
+      /{{ album_genres_array }}|{{album_genres_array}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+    )
+    .replace(
+      /{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
     )
     .replace(
       /{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -920,6 +932,52 @@ const VISUAL_TEMPLATE = [
 const visualResult = processTemplate(VISUAL_TEMPLATE, TRACK, ARTISTS);
 console.log(visualResult);
 console.log("\n=== End Generated Markdown ===\n");
+
+// ---------------------------------------------------------------------------
+// Album genres tokens
+// ---------------------------------------------------------------------------
+
+console.log("\nAlbum genres tokens");
+
+const ALBUM_DETAIL = {
+  id: "456",
+  name: "Midnight Dreams",
+  popularity: 80,
+  genres: ["indie pop", "dream pop"],
+};
+
+const ALBUM_NO_GENRES = { id: "456", name: "Midnight Dreams", popularity: 80, genres: [] };
+
+assert(
+  "{{ album_genres }} with album → joined string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "indie pop, dream pop",
+);
+assert(
+  "{{album_genres}} with album → joined string",
+  processTemplate("{{album_genres}}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "indie pop, dream pop",
+);
+assert(
+  "{{ album_genres_array }} with album → quoted list",
+  processTemplate("{{ album_genres_array }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  '"indie pop", "dream pop"',
+);
+assert(
+  "{{ album_genres_hashtag }} with album → hashtags",
+  processTemplate("{{ album_genres_hashtag }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "#indie_pop #dream_pop",
+);
+assert(
+  "{{ album_genres }} without album → empty string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS),
+  "",
+);
+assert(
+  "{{ album_genres }} with empty genres array → empty string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS, {}, ALBUM_NO_GENRES),
+  "",
+);
 
 // ---------------------------------------------------------------------------
 // Nullish field guards — artist missing genres, followers, popularity

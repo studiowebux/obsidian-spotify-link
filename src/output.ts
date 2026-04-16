@@ -35,7 +35,7 @@ async function _processTrack(
 	template: string,
 	options?: TemplateOptions,
 ): Promise<TrackProcessingResult> {
-	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template);
+	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template) || /\{\{?\s*album_genres[_a-z]*\s*\}?\}/i.test(template);
 
 	const [artists, album] = await Promise.all([
 		Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
@@ -84,7 +84,7 @@ export async function processRecentlyPlayedTracks(
 	options?: TemplateOptions,
 ): Promise<string> {
 	const messages: string[] = [];
-	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template);
+	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template) || /\{\{?\s*album_genres[_a-z]*\s*\}?\}/i.test(template);
 	if (data && data.items) {
 		for (const item of data.items) {
 			const track = item.track as Track;
