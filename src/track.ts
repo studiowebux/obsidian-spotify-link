@@ -189,18 +189,18 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ genres }}|{{genres}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_array }}|{{genres_array}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.map((g) => `"${g}"`)
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.map((g) => `#${g.replace(/ /g, "_")}`)
 				.join(" "),
 		)
@@ -209,28 +209,28 @@ export function getTrackMessage(
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.followers.total}`,
+						(artist) => `${artist.name}: ${artist.followers?.total ?? 0}`,
 					)
 					.join(", ")
-				: artists[0].followers.total.toString(),
+				: (artists[0].followers?.total ?? 0).toString(),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.popularity}`,
+						(artist) => `${artist.name}: ${artist.popularity ?? 0}`,
 					)
 					.join(", ")
-				: artists[0].popularity.toString(),
+				: (artists[0].popularity ?? 0).toString(),
 		)
 		.replace(
 			/{{ track_popularity }}|{{track_popularity}}/g,
-			track.popularity.toString(),
+			(track.popularity ?? 0).toString(),
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			album ? album.popularity.toString() : "",
+			album ? (album.popularity ?? 0).toString() : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -463,18 +463,18 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ genres }}|{{genres}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_array }}|{{genres_array}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.map((g) => `"${g}"`)
 				.join(", "),
 		)
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
-			Array.from(new Set(artists?.flatMap((artist) => artist.genres)))
+			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.map((g) => `#${g.replace(/ /g, "_")}`)
 				.join(" "),
 		)
@@ -483,28 +483,28 @@ export function getRecentlyPlayedTrackMessage(
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.followers.total}`,
+						(artist) => `${artist.name}: ${artist.followers?.total ?? 0}`,
 					)
 					.join(", ")
-				: artists[0].followers.total.toString(),
+				: (artists[0].followers?.total ?? 0).toString(),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.popularity}`,
+						(artist) => `${artist.name}: ${artist.popularity ?? 0}`,
 					)
 					.join(", ")
-				: artists[0].popularity.toString(),
+				: (artists[0].popularity ?? 0).toString(),
 		)
 		.replace(
 			/{{ track_popularity }}|{{track_popularity}}/g,
-			track.popularity.toString(),
+			(track.popularity ?? 0).toString(),
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			album ? album.popularity.toString() : "",
+			album ? (album.popularity ?? 0).toString() : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,

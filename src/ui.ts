@@ -29,6 +29,7 @@ export async function handleEditor(
       return { trackId: (data.item as Track).id, playlistNames: [] };
     }
   } catch (e) {
+    console.error("Spotify Link Plugin:", e);
     new Notice(e instanceof Error ? e.message : String(e));
   }
   return { trackId: null, playlistNames: [] };
@@ -51,6 +52,7 @@ export async function handleTemplateEditor(
       return { trackId: (data.item as Track).id, playlistNames: result.playlistNames };
     }
   } catch (e) {
+    console.error("Spotify Link Plugin:", e);
     new Notice(e instanceof Error ? e.message : String(e));
   }
   return { trackId: null, playlistNames: [] };
@@ -71,6 +73,7 @@ export async function handlePlaylistsEditor(
       );
     }
   } catch (e) {
+    console.error("Spotify Link Plugin:", e);
     new Notice(e instanceof Error ? e.message : String(e));
   }
 }
