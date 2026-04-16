@@ -188,6 +188,16 @@ export function getTrackMessage(
 			},
 		)
 		.replace(
+			/{{ genres_by_artist(:.*?)? }}|{{genres_by_artist(:.*?)?}}/g,
+			(_match, p1, p2) => {
+				const raw = p1 ?? p2;
+				const sep = raw !== undefined ? raw.substring(1).trimEnd() : " | ";
+				return artists
+					?.map((artist) => `${artist.name}: ${(artist.genres ?? []).join(", ")}`)
+					.join(sep) ?? "";
+			},
+		)
+		.replace(
 			/{{ genres }}|{{genres}}/g,
 			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
 				.join(", "),
@@ -471,6 +481,16 @@ export function getRecentlyPlayedTrackMessage(
 				}
 
 				return timestamp;
+			},
+		)
+		.replace(
+			/{{ genres_by_artist(:.*?)? }}|{{genres_by_artist(:.*?)?}}/g,
+			(_match, p1, p2) => {
+				const raw = p1 ?? p2;
+				const sep = raw !== undefined ? raw.substring(1).trimEnd() : " | ";
+				return artists
+					?.map((artist) => `${artist.name}: ${(artist.genres ?? []).join(", ")}`)
+					.join(sep) ?? "";
 			},
 		)
 		.replace(

@@ -114,6 +114,16 @@ function processTemplate(template, track, artists, options = {}, album = undefin
     )
     .replace(/{{ album }}|{{album}}/g, track.album.name)
     .replace(
+      /{{ genres_by_artist(:.*?)? }}|{{genres_by_artist(:.*?)?}}/g,
+      (_match, p1, p2) => {
+        const raw = p1 ?? p2;
+        const sep = raw !== undefined ? raw.substring(1).trimEnd() : " | ";
+        return artists
+          ?.map((artist) => `${artist.name}: ${(artist.genres ?? []).join(", ")}`)
+          .join(sep) ?? "";
+      },
+    )
+    .replace(
       /{{ genres }}|{{genres}}/g,
       Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
         .join(", "),
@@ -329,6 +339,68 @@ const ARTISTS = [
     uri: "spotify:artist:a2",
   },
 ];
+
+const ARTISTS_NO_GENRES = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: { href: null, total: 150000 },
+    genres: undefined,
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: 72,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_NO_FOLLOWERS = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: undefined,
+    genres: ["indie pop"],
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: 72,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_NO_POPULARITY = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: { href: null, total: 150000 },
+    genres: ["indie pop"],
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: undefined,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_ALL_NULLISH = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: undefined,
+    genres: undefined,
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: undefined,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const TRACK_NO_POPULARITY = Object.assign({}, TRACK, { popularity: undefined });
 
 // ---------------------------------------------------------------------------
 // Test runner
@@ -934,6 +1006,45 @@ console.log(visualResult);
 console.log("\n=== End Generated Markdown ===\n");
 
 // ---------------------------------------------------------------------------
+// genres_by_artist — default and custom separator
+// ---------------------------------------------------------------------------
+
+console.log("\ngenres_by_artist — separator variants");
+
+assertBothVariants(
+  "genres_by_artist",
+  "{{ genres_by_artist }}",
+  "{{genres_by_artist}}",
+  "Luna Wave: indie pop, dream pop | Neon Drift: synth pop, electro",
+);
+
+assert(
+  "{{ genres_by_artist:; }} custom separator — trimEnd normalizes both variants",
+  processTemplate("{{ genres_by_artist:; }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro",
+);
+assert(
+  "{{genres_by_artist:; }} custom separator no-space — trimEnd normalizes both variants",
+  processTemplate("{{genres_by_artist:; }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro",
+);
+assert(
+  "{{ genres_by_artist: | }} pipe separator (leading space preserved, trailing trimmed)",
+  processTemplate("{{ genres_by_artist: | }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop |Neon Drift: synth pop, electro",
+);
+assert(
+  "{{ genres_by_artist }} missing genres → empty artist genre list",
+  processTemplate("{{ genres_by_artist }}", TRACK, ARTISTS_NO_GENRES),
+  "Luna Wave: ",
+);
+assert(
+  "{{ genres_by_artist:; }} does not conflict with table pipe",
+  processTemplate("| {{ genres_by_artist:; }} |", TRACK, ARTISTS),
+  "| Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro |",
+);
+
+// ---------------------------------------------------------------------------
 // Album genres tokens
 // ---------------------------------------------------------------------------
 
@@ -984,68 +1095,6 @@ assert(
 // ---------------------------------------------------------------------------
 
 console.log("\nNullish field guards — missing artist fields");
-
-const ARTISTS_NO_GENRES = [
-  {
-    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
-    followers: { href: null, total: 150000 },
-    genres: undefined,
-    href: "https://api.spotify.com/v1/artists/a1",
-    id: "a1",
-    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
-    name: "Luna Wave",
-    popularity: 72,
-    type: "artist",
-    uri: "spotify:artist:a1",
-  },
-];
-
-const ARTISTS_NO_FOLLOWERS = [
-  {
-    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
-    followers: undefined,
-    genres: ["indie pop"],
-    href: "https://api.spotify.com/v1/artists/a1",
-    id: "a1",
-    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
-    name: "Luna Wave",
-    popularity: 72,
-    type: "artist",
-    uri: "spotify:artist:a1",
-  },
-];
-
-const ARTISTS_NO_POPULARITY = [
-  {
-    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
-    followers: { href: null, total: 150000 },
-    genres: ["indie pop"],
-    href: "https://api.spotify.com/v1/artists/a1",
-    id: "a1",
-    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
-    name: "Luna Wave",
-    popularity: undefined,
-    type: "artist",
-    uri: "spotify:artist:a1",
-  },
-];
-
-const ARTISTS_ALL_NULLISH = [
-  {
-    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
-    followers: undefined,
-    genres: undefined,
-    href: "https://api.spotify.com/v1/artists/a1",
-    id: "a1",
-    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
-    name: "Luna Wave",
-    popularity: undefined,
-    type: "artist",
-    uri: "spotify:artist:a1",
-  },
-];
-
-const TRACK_NO_POPULARITY = Object.assign({}, TRACK, { popularity: undefined });
 
 // genres missing → empty string (no crash)
 assert(

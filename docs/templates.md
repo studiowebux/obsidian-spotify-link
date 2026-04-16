@@ -102,6 +102,7 @@ Output: `#Artist_One #Artist_Two`
 - `{{ genres }}` - Comma-separated artist genres, deduplicated across all artists
 - `{{ genres_array }}` - Artist genre list formatted for YAML/Dataview arrays: `"genre1", "genre2"`, deduplicated across all artists
 - `{{ genres_hashtag }}` - Artist genres as hashtags: `#genre_one #genre_two`, deduplicated across all artists
+- `{{ genres_by_artist }}` - Per-artist genre breakdown: `Artist1: genre1, genre2 | Artist2: genre3`. Separator defaults to ` | `. Use `{{ genres_by_artist:SEP }}` to override — e.g. `{{ genres_by_artist:; }}` outputs `Artist1: genre1, genre2;Artist2: genre3`. Trailing whitespace in the separator is trimmed.
 - `{{ album_genres }}` - Comma-separated album genres. Requires a separate API call (`GET /v1/albums/{id}`) — only fetched when the token is present in the template. Returns empty string if the album has no genres.
 - `{{ album_genres_array }}` - Album genres formatted for YAML/Dataview arrays: `"genre1", "genre2"`
 - `{{ album_genres_hashtag }}` - Album genres as hashtags: `#genre_one #genre_two`
