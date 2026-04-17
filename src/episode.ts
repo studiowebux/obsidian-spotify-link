@@ -90,7 +90,7 @@ export function getEpisodeMessage(
 		)
 		.replace(
 			/{{ episode_cover_link_large }}|{{episode_cover_link_large}}/g,
-			`[Cover - ${episode.name}](${episode.images[0].url})`,
+			`[Cover - ${episode.name}](${episode.images[0]?.url})`,
 		)
 		.replace(
 			/{{ episode_cover_link_medium }}|{{episode_cover_link_medium}}/g,
@@ -135,7 +135,7 @@ export function getEpisodeMessage(
 		)
 		.replace(
 			/{{ total_episodes }}|{{total_episodes}}/g,
-			episode.show.total_episodes.toString(),
+			(episode.show.total_episodes ?? 0).toString(),
 		)
 		.replace(/{{ progress_ms }}|{{progress_ms}}/g, progressInMilliseconds)
 		.replace(/{{ progress_sec }}|{{progress_sec}}/g, progressInSeconds)

@@ -119,6 +119,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 
 			return input; // This is the inline template.
 		} catch (e) {
+			console.error("Spotify Link Plugin:", e);
 			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			return "";
 		}
@@ -152,7 +153,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 						this.app.vault.getAbstractFileByPath(filename) as TFile,
 					);
 			} catch (e) {
-				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+				console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -162,7 +164,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 			await vault.createFolder(folder);
 		} catch (e) {
 			if ((e instanceof Error ? e.message : String(e)) !== "Folder already exists.") {
-				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+				console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -180,7 +183,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 					);
 				}
 			} catch (e) {
-				new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+				console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			}
 		}
 	}
@@ -260,7 +264,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 					await this.app.vault.create(filename, content);
 					created++;
 				} catch (e) {
-					new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+					console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 				}
 			}
 		}
@@ -336,6 +341,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 				);
 			}
 		} catch (e) {
+			console.error("Spotify Link Plugin:", e);
 			new Notice("[ERROR] Spotify Link Plugin: Failed to regenerate playlist notes: " + (e instanceof Error ? e.message : String(e)), 10000);
 		}
 	}
@@ -417,7 +423,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 						content = `${result.content}\n\n`;
 						cachedPlaylistNames = result.playlistNames;
 					} catch (e) {
-						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+						console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 					}
 					resolve();
 				}).open();
@@ -468,6 +475,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			// Auto open the file even if there is an error.
 			// Probably an already exists as the others should be handle correctly.
 			await this.autoOpen(filename);
+			console.error("Spotify Link Plugin:", e);
 			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 		}
 
@@ -537,6 +545,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 						this.settings.spotifyClientSecret,
 					);
 				} catch (e) {
+					console.error("Spotify Link Plugin:", e);
 					new Notice(
 						"[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)),
 						3000,
@@ -643,7 +652,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 							await this.regeneratePlaylistNotes(trackIdOrUrl, result.playlistNames);
 						}
 					} catch (e) {
-						new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+						console.error("Spotify Link Plugin:", e);
+			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 					}
 				}).open();
 			},
@@ -664,6 +674,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 					await requestRefreshToken(this.settings.spotifyClientId, this.settings.spotifyClientSecret);
 					new Notice(`Spotify Link Plugin: Access Refreshed`);
 				} catch (e) {
+					console.error("Spotify Link Plugin:", e);
 					new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
 				}
 			},
@@ -714,6 +725,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 							try {
 								await this.createFile(parent, customMenu.id);
 							} catch (e) {
+								console.error("Spotify Link Plugin:", e);
 								new Notice(
 									`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`,
 								);
@@ -741,6 +753,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			this.spotifyConnected = info.success;
 			this.spotifyUrl = info.spotifyUrl;
 		} catch (e) {
+			console.error("Spotify Link Plugin:", e);
 			new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
 			this.spotifyConnected = false;
 		} finally {

@@ -27,7 +27,7 @@ function formatSpotifyDate(date, format) {
 // Template processor (mirrors getTrackMessage in track.ts)
 // ---------------------------------------------------------------------------
 
-function processTemplate(template, track, artists, options = {}) {
+function processTemplate(template, track, artists, options = {}, album = undefined) {
   const defaultImageSize = options.defaultImageSize ?? "";
   const defaultReleaseDateFormat = options.defaultReleaseDateFormat ?? "";
 
@@ -114,9 +114,18 @@ function processTemplate(template, track, artists, options = {}) {
     )
     .replace(/{{ album }}|{{album}}/g, track.album.name)
     .replace(
+      /{{ genres_by_artist(:.*?)? }}|{{genres_by_artist(:.*?)?}}/g,
+      (_match, p1, p2) => {
+        const raw = p1 ?? p2;
+        const sep = raw !== undefined ? raw.substring(1).trimEnd() : " | ";
+        return artists
+          ?.map((artist) => `${artist.name}: ${(artist.genres ?? []).join(", ")}`)
+          .join(sep) ?? "";
+      },
+    )
+    .replace(
       /{{ genres }}|{{genres}}/g,
-      Array.from(new Set(artists?.map((artist) => artist.genres)))
-        .flat(Infinity)
+      Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
         .join(", "),
     )
     .replace(
@@ -124,7 +133,7 @@ function processTemplate(template, track, artists, options = {}) {
       Array.from(
         new Set(
           artists?.map((artist) =>
-            artist.genres?.map((g) => `"${g}"`)
+            (artist.genres ?? []).map((g) => `"${g}"`)
           ),
         ),
       )
@@ -136,7 +145,7 @@ function processTemplate(template, track, artists, options = {}) {
       Array.from(
         new Set(
           artists?.map((artist) =>
-            artist.genres?.map((g) => `#${g.replace(/ /g, "_")}`)
+            (artist.genres ?? []).map((g) => `#${g.replace(/ /g, "_")}`)
           ),
         ),
       )
@@ -147,17 +156,33 @@ function processTemplate(template, track, artists, options = {}) {
       /{{ followers }}|{{followers}}/g,
       artists.length > 1
         ? artists
-            ?.map((artist) => `${artist.name}: ${artist.followers.total}`)
+            ?.map((artist) => `${artist.name}: ${artist.followers?.total ?? 0}`)
             .join(", ")
-        : artists[0].followers.total.toString(),
+        : (artists[0].followers?.total ?? 0).toString(),
     )
     .replace(
       /{{ popularity }}|{{popularity}}/g,
       artists.length > 1
         ? artists
-            ?.map((artist) => `${artist.name}: ${artist.popularity}`)
+            ?.map((artist) => `${artist.name}: ${artist.popularity ?? 0}`)
             .join(", ")
-        : artists[0].popularity.toString(),
+        : (artists[0].popularity ?? 0).toString(),
+    )
+    .replace(
+      /{{ track_popularity }}|{{track_popularity}}/g,
+      (track.popularity ?? 0).toString(),
+    )
+    .replace(
+      /{{ album_genres }}|{{album_genres}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+    )
+    .replace(
+      /{{ album_genres_array }}|{{album_genres_array}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+    )
+    .replace(
+      /{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+      album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
     )
     .replace(
       /{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -314,6 +339,68 @@ const ARTISTS = [
     uri: "spotify:artist:a2",
   },
 ];
+
+const ARTISTS_NO_GENRES = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: { href: null, total: 150000 },
+    genres: undefined,
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: 72,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_NO_FOLLOWERS = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: undefined,
+    genres: ["indie pop"],
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: 72,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_NO_POPULARITY = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: { href: null, total: 150000 },
+    genres: ["indie pop"],
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: undefined,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const ARTISTS_ALL_NULLISH = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: undefined,
+    genres: undefined,
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Luna Wave",
+    popularity: undefined,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+const TRACK_NO_POPULARITY = Object.assign({}, TRACK, { popularity: undefined });
 
 // ---------------------------------------------------------------------------
 // Test runner
@@ -917,6 +1004,152 @@ const VISUAL_TEMPLATE = [
 const visualResult = processTemplate(VISUAL_TEMPLATE, TRACK, ARTISTS);
 console.log(visualResult);
 console.log("\n=== End Generated Markdown ===\n");
+
+// ---------------------------------------------------------------------------
+// genres_by_artist — default and custom separator
+// ---------------------------------------------------------------------------
+
+console.log("\ngenres_by_artist — separator variants");
+
+assertBothVariants(
+  "genres_by_artist",
+  "{{ genres_by_artist }}",
+  "{{genres_by_artist}}",
+  "Luna Wave: indie pop, dream pop | Neon Drift: synth pop, electro",
+);
+
+assert(
+  "{{ genres_by_artist:; }} custom separator — trimEnd normalizes both variants",
+  processTemplate("{{ genres_by_artist:; }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro",
+);
+assert(
+  "{{genres_by_artist:; }} custom separator no-space — trimEnd normalizes both variants",
+  processTemplate("{{genres_by_artist:; }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro",
+);
+assert(
+  "{{ genres_by_artist: | }} pipe separator (leading space preserved, trailing trimmed)",
+  processTemplate("{{ genres_by_artist: | }}", TRACK, ARTISTS),
+  "Luna Wave: indie pop, dream pop |Neon Drift: synth pop, electro",
+);
+assert(
+  "{{ genres_by_artist }} missing genres → empty artist genre list",
+  processTemplate("{{ genres_by_artist }}", TRACK, ARTISTS_NO_GENRES),
+  "Luna Wave: ",
+);
+assert(
+  "{{ genres_by_artist:; }} does not conflict with table pipe",
+  processTemplate("| {{ genres_by_artist:; }} |", TRACK, ARTISTS),
+  "| Luna Wave: indie pop, dream pop;Neon Drift: synth pop, electro |",
+);
+
+// ---------------------------------------------------------------------------
+// Album genres tokens
+// ---------------------------------------------------------------------------
+
+console.log("\nAlbum genres tokens");
+
+const ALBUM_DETAIL = {
+  id: "456",
+  name: "Midnight Dreams",
+  popularity: 80,
+  genres: ["indie pop", "dream pop"],
+};
+
+const ALBUM_NO_GENRES = { id: "456", name: "Midnight Dreams", popularity: 80, genres: [] };
+
+assert(
+  "{{ album_genres }} with album → joined string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "indie pop, dream pop",
+);
+assert(
+  "{{album_genres}} with album → joined string",
+  processTemplate("{{album_genres}}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "indie pop, dream pop",
+);
+assert(
+  "{{ album_genres_array }} with album → quoted list",
+  processTemplate("{{ album_genres_array }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  '"indie pop", "dream pop"',
+);
+assert(
+  "{{ album_genres_hashtag }} with album → hashtags",
+  processTemplate("{{ album_genres_hashtag }}", TRACK, ARTISTS, {}, ALBUM_DETAIL),
+  "#indie_pop #dream_pop",
+);
+assert(
+  "{{ album_genres }} without album → empty string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS),
+  "",
+);
+assert(
+  "{{ album_genres }} with empty genres array → empty string",
+  processTemplate("{{ album_genres }}", TRACK, ARTISTS, {}, ALBUM_NO_GENRES),
+  "",
+);
+
+// ---------------------------------------------------------------------------
+// Nullish field guards — artist missing genres, followers, popularity
+// ---------------------------------------------------------------------------
+
+console.log("\nNullish field guards — missing artist fields");
+
+// genres missing → empty string (no crash)
+assert(
+  "{{ genres }} with missing artist.genres → empty string",
+  processTemplate("{{ genres }}", TRACK, ARTISTS_NO_GENRES),
+  "",
+);
+assert(
+  "{{ genres_array }} with missing artist.genres → empty string",
+  processTemplate("{{ genres_array }}", TRACK, ARTISTS_NO_GENRES),
+  "",
+);
+assert(
+  "{{ genres_hashtag }} with missing artist.genres → empty string",
+  processTemplate("{{ genres_hashtag }}", TRACK, ARTISTS_NO_GENRES),
+  "",
+);
+
+// followers missing → defaults to 0 (no crash)
+assert(
+  "{{ followers }} with missing artist.followers → '0'",
+  processTemplate("{{ followers }}", TRACK, ARTISTS_NO_FOLLOWERS),
+  "0",
+);
+
+// popularity missing → defaults to 0 (no crash)
+assert(
+  "{{ popularity }} with missing artist.popularity → '0'",
+  processTemplate("{{ popularity }}", TRACK, ARTISTS_NO_POPULARITY),
+  "0",
+);
+
+// all nullish fields at once (no crash)
+assert(
+  "{{ genres }} with all nullish artist fields → empty string",
+  processTemplate("{{ genres }}", TRACK, ARTISTS_ALL_NULLISH),
+  "",
+);
+assert(
+  "{{ followers }} with all nullish artist fields → '0'",
+  processTemplate("{{ followers }}", TRACK, ARTISTS_ALL_NULLISH),
+  "0",
+);
+assert(
+  "{{ popularity }} with all nullish artist fields → '0'",
+  processTemplate("{{ popularity }}", TRACK, ARTISTS_ALL_NULLISH),
+  "0",
+);
+
+// track.popularity missing → defaults to 0 (no crash)
+assert(
+  "{{ track_popularity }} with missing track.popularity → '0'",
+  processTemplate("{{ track_popularity }}", TRACK_NO_POPULARITY, ARTISTS),
+  "0",
+);
 
 // ---------------------------------------------------------------------------
 // Summary

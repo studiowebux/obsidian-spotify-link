@@ -337,6 +337,7 @@ export type AlbumDetail = {
 	id: string;
 	name: string;
 	popularity: number;
+	genres: string[];
 };
 
 export type RecentlyPlayed = {

@@ -99,9 +99,13 @@ Output: `#Artist_One #Artist_Two`
 - `{{ artist_image }}` - Artist images as markdown image (accepts inline size override, see [Image dimensions](#image-dimensions))
 - `{{ artist_image_link }}` - Artist images as markdown link (no `!` prefix)
 - `{{ artist_image_url }}` - Artist image URLs (plain text)
-- `{{ genres }}` - Comma-separated genres, deduplicated across all artists
-- `{{ genres_array }}` - Genre list formatted for YAML/Dataview arrays: `"genre1", "genre2"`, deduplicated across all artists
-- `{{ genres_hashtag }}` - Hashtag format: `#genre_one #genre_two`, deduplicated across all artists
+- `{{ genres }}` - Comma-separated artist genres, deduplicated across all artists
+- `{{ genres_array }}` - Artist genre list formatted for YAML/Dataview arrays: `"genre1", "genre2"`, deduplicated across all artists
+- `{{ genres_hashtag }}` - Artist genres as hashtags: `#genre_one #genre_two`, deduplicated across all artists
+- `{{ genres_by_artist }}` - Per-artist genre breakdown: `Artist1: genre1, genre2 | Artist2: genre3`. Separator defaults to ` | `. Use `{{ genres_by_artist:SEP }}` to override — e.g. `{{ genres_by_artist:; }}` outputs `Artist1: genre1, genre2;Artist2: genre3`. Trailing whitespace in the separator is trimmed.
+- `{{ album_genres }}` - Comma-separated album genres. Requires a separate API call (`GET /v1/albums/{id}`) — only fetched when the token is present in the template. Returns empty string if the album has no genres.
+- `{{ album_genres_array }}` - Album genres formatted for YAML/Dataview arrays: `"genre1", "genre2"`
+- `{{ album_genres_hashtag }}` - Album genres as hashtags: `#genre_one #genre_two`
 
 **Playlists**
 
@@ -373,7 +377,12 @@ Template automatically adapts based on artist count.
 
 ### Genre Deduplication
 
-Genres are collected from all artists on the track and deduplicated automatically. Since Spotify assigns genres to artists (not to tracks directly), a track with two artists sharing a genre will still list that genre only once.
+Spotify assigns genres at the **artist** and **album** level — there are no genres on the track object itself.
+
+- `{{ genres }}`, `{{ genres_array }}`, `{{ genres_hashtag }}` — sourced from the artist(s). Collected from all artists on the track and deduplicated automatically. A track with two artists sharing a genre will still list that genre only once.
+- `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}` — sourced from the album. Fetched via a separate API call; only made when the token is present in the template.
+
+In practice, album-level genres on Spotify are often empty or sparse. Artist genres tend to be more populated.
 
 ### Timestamp Formats
 

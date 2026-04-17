@@ -258,7 +258,7 @@ export async function getAlbum(
 			throw new Error(json?.error?.message || response.status);
 		}
 		if (!json) throw new Error("Unable to get the album.");
-		return { id: json.id, name: json.name, popularity: json.popularity } as AlbumDetail;
+		return { id: json.id, name: json.name, popularity: json.popularity, genres: json.genres ?? [] } as AlbumDetail;
 	} catch (e) {
 		throw new Error("Unable to get the album.");
 	}
