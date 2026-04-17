@@ -68,6 +68,12 @@ Templates can be:
 - **Inline**: Direct template string in settings
 - **Path-based**: Reference to vault file (e.g., `Templates/Spotify/track.md`)
 
+See [Templates → Variables](templates.md#variables) for the full token reference, including:
+- `{{ genres }}`, `{{ genres_array }}`, `{{ genres_hashtag }}` — artist genres (deduplicated)
+- `{{ genres_by_artist }}` / `{{ genres_by_artist:SEP }}` — per-artist genre breakdown with optional separator override
+- `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}` — album-level genres (fetched on demand)
+- `{{ album_popularity }}`, `{{ track_popularity }}` — popularity scores
+
 Path resolution attempts:
 
 1. Exact path
@@ -223,3 +229,7 @@ Token persistence across Obsidian restarts via localStorage.
 - Verify path relative to vault root
 - Check file extension (auto-appends `.md`)
 - Fallback to inline if path invalid
+
+**Template produces an error notice**
+- Open the Obsidian developer console (Ctrl+Shift+I on Windows/Linux, Cmd+Option+I on Mac) and look for `Spotify Link Plugin:` entries — the full stack trace is logged there alongside every error notice
+- Common causes: a token referencing a field the Spotify API did not return for that track (e.g. `{{ genres }}` for a local file, `{{ followers }}` for an artist with no follower data). These are now safely guarded and return `""` or `0` instead of crashing.
