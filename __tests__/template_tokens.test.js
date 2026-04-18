@@ -52,7 +52,7 @@ function processTemplate(template, track, artists, options = {}, album = undefin
         const isTag = prefix === "#";
         if (isTag) {
           return track.artists
-            .map((a) => `${prefix}${a.name?.replace(/ /g, "_")}${suffix}`)
+            .map((a) => `${prefix}${a.name?.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}${suffix}`)
             .join("\n");
         }
         return track.artists.map((a) => `${prefix}${a.name}${suffix}`).join("\n");
@@ -145,7 +145,7 @@ function processTemplate(template, track, artists, options = {}, album = undefin
       Array.from(
         new Set(
           artists?.map((artist) =>
-            (artist.genres ?? []).map((g) => `#${g.replace(/ /g, "_")}`)
+            (artist.genres ?? []).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
           ),
         ),
       )
@@ -182,7 +182,7 @@ function processTemplate(template, track, artists, options = {}, album = undefin
     )
     .replace(
       /{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
-      album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
+      album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`).join(" ") : "",
     )
     .replace(
       /{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -1004,6 +1004,49 @@ const VISUAL_TEMPLATE = [
 const visualResult = processTemplate(VISUAL_TEMPLATE, TRACK, ARTISTS);
 console.log(visualResult);
 console.log("\n=== End Generated Markdown ===\n");
+
+// ---------------------------------------------------------------------------
+// Hashtag sanitization — special characters in artist/genre names
+// ---------------------------------------------------------------------------
+
+console.log("\nHashtag sanitization — special characters");
+
+const TRACK_SPECIAL = Object.assign({}, TRACK, {
+  artists: [
+    { external_urls: { spotify: "https://open.spotify.com/artist/a1" }, href: "https://api.spotify.com/v1/artists/a1", id: "a1", name: "Macklemore & Ryan Lewis", type: "artist", uri: "spotify:artist:a1" },
+  ],
+});
+
+const ARTISTS_SPECIAL = [
+  {
+    external_urls: { spotify: "https://open.spotify.com/artist/a1" },
+    followers: { href: null, total: 5000000 },
+    genres: ["hip-hop", "pop rap", "r&b"],
+    href: "https://api.spotify.com/v1/artists/a1",
+    id: "a1",
+    images: [{ url: "https://i.scdn.co/image/artist1", height: 640, width: 640 }],
+    name: "Macklemore & Ryan Lewis",
+    popularity: 80,
+    type: "artist",
+    uri: "spotify:artist:a1",
+  },
+];
+
+assert(
+  "{{ artists_formatted:#: }} sanitizes & in artist name",
+  processTemplate("{{ artists_formatted:#: }}", TRACK_SPECIAL, ARTISTS_SPECIAL),
+  "#Macklemore_Ryan_Lewis",
+);
+assert(
+  "{{ genres_hashtag }} sanitizes - in genre",
+  processTemplate("{{ genres_hashtag }}", TRACK_SPECIAL, ARTISTS_SPECIAL),
+  "#hip_hop #pop_rap #r_b",
+);
+assert(
+  "{{ genres_hashtag }} no leading/trailing underscores",
+  processTemplate("{{ genres_hashtag }}", TRACK_SPECIAL, ARTISTS_SPECIAL).split(" ").every((t) => !t.startsWith("#_") && !t.endsWith("_")),
+  true,
+);
 
 // ---------------------------------------------------------------------------
 // genres_by_artist — default and custom separator

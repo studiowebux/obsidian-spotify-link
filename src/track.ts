@@ -67,7 +67,7 @@ export function getTrackMessage(
 						.map(
 							(a) =>
 								`${prefix}${
-									a.name?.replace(/ /g, "_")
+									a.name?.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")
 								}${suffix}`,
 						)
 						.join("\n");
@@ -211,7 +211,7 @@ export function getTrackMessage(
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
 			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
-				.map((g) => `#${g.replace(/ /g, "_")}`)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
 				.join(" "),
 		)
 		.replace(
@@ -252,7 +252,7 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`).join(" ") : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -363,7 +363,7 @@ export function getRecentlyPlayedTrackMessage(
 						.map(
 							(a) =>
 								`${prefix}${
-									a.name?.replace(/ /g, "_")
+									a.name?.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")
 								}${suffix}`,
 						)
 						.join("\n");
@@ -507,7 +507,7 @@ export function getRecentlyPlayedTrackMessage(
 		.replace(
 			/{{ genres_hashtag }}|{{genres_hashtag}}/g,
 			Array.from(new Set(artists?.flatMap((artist) => artist.genres ?? [])))
-				.map((g) => `#${g.replace(/ /g, "_")}`)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
 				.join(" "),
 		)
 		.replace(
@@ -548,7 +548,7 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/ /g, "_")}`).join(" ") : "",
+			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`).join(" ") : "",
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
