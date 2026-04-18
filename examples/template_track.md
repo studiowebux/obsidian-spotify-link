@@ -21,11 +21,18 @@ timestampz(YYYY-MM-DD) : {{ timestampz(YYYY-MM-DD) }}
 timestamp(YYYY-MM-DD HH:mm) : {{ timestamp(YYYY-MM-DD HH:mm) }}
 timestampz(YYYY-MM-DD HH:mm) : {{ timestampz(YYYY-MM-DD HH:mm) }}
 
-Genres Tests:
+## Genres
 
-Genres: {{ genres }}
-Genres Array: {{ genres_array }}
-Genres hashatg: {{ genres_hashtag }}
+| Token | Output |
+| ----- | ------ |
+| artist genres | {{ genres }} |
+| artist genres array | {{ genres_array }} |
+| artist genres hashtag | {{ genres_hashtag }} |
+| per-artist breakdown | {{ genres_by_artist }} |
+| per-artist (semicolon) | {{ genres_by_artist:; }} |
+| album genres | {{ album_genres }} |
+| album genres array | {{ album_genres_array }} |
+| album genres hashtag | {{ album_genres_hashtag }} |
 
 Artists values:
 
