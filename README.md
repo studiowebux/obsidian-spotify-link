@@ -113,7 +113,7 @@ Distributed under the MIT License. See LICENSE for more information.
 
 ## Contact
 
--   Tommy Gingras @ tommy@studiowebux.com | Studio Webux
+- Tommy Gingras @ tommy@studiowebux.com | Studio Webux
 
 <div>
 <b> | </b>
@@ -124,11 +124,5 @@ Distributed under the MIT License. See LICENSE for more information.
         style="height: 30px !important; width: 105px !important"
 /></a>
 <b> | </b>
-<a href="https://webuxlab.com" target="_blank"
-      ><img
-        src="https://webuxlab-static.s3.ca-central-1.amazonaws.com/logoAmpoule.svg"
-        alt="Webux Logo"
-        style="height: 30px !important"
-/> Webux Lab</a>
-<b> | </b>
+<a href="https://webuxlab.com" target="_blank">Webux Lab</a>
 </div>
