@@ -189,12 +189,39 @@ export default class SpotifyLinkPlugin extends Plugin {
 		}
 	}
 
-	async getName(track?: CurrentlyPlayingTrack | Track): Promise<string> {
+	async getName(
+		track?: CurrentlyPlayingTrack | Track | string | null,
+	): Promise<string> {
 		let name = new Date().toISOString();
 
-		// Accept either a raw Track or a CurrentlyPlayingTrack wrapper
+		// The "currently playing" branch in createFile assigns `track` to the
+		// formatted markdown string returned by getCurrentlyPlayingTrackAsString,
+		// and suggester paths can also hand us the rendered display string for
+		// the selected entry. Recover by parsing the track ID out of the
+		// embedded Spotify URL and re-fetching the underlying Track object.
+		if (typeof track === "string") {
+			const m = track.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
+			if (!m) return name;
+			try {
+				track = await getTrack(
+					this.settings.spotifyClientId,
+					this.settings.spotifyClientSecret,
+					m[1],
+				);
+			} catch (e) {
+				console.error(
+					"Spotify Link Plugin: getName re-fetch failed",
+					e,
+				);
+				return name;
+			}
+		}
+
+		// Accept either a raw Track or a CurrentlyPlayingTrack wrapper.
+		// The `typeof === "object"` guard prevents the `in` operator from
+		// being applied to a primitive if a future caller slips one in.
 		const item: Track | undefined =
-			track && "item" in track
+			track && typeof track === "object" && "item" in track
 				? (track.item as Track)
 				: (track as Track | undefined);
 
@@ -461,7 +488,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		if (!content) return;
 
 		const filename = `${normalizePath(
-			`/${parent}/${await this.getName(trackForName ?? track as CurrentlyPlayingTrack)}`,
+			`/${parent}/${await this.getName(trackForName ?? track)}`,
 		).replace(/[:|.]/g, "_")}.md`;
 
 		const exists = await this.app.vault.adapter.exists(filename, true);
