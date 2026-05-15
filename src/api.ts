@@ -5,6 +5,7 @@ import {
 	Artist,
 	AuthorizationCodeResponse,
 	CurrentlyPlayingTrack,
+	Episode,
 	Me,
 	PlaylistDetail,
 	PlaylistSummary,
@@ -209,6 +210,38 @@ export async function getTrack(
 	} catch (e) {
 		clog("getTrack", "error", e);
 		throw new Error("Unable to get the track.");
+	}
+}
+
+export async function getEpisode(
+	clientId: string,
+	clientSecret: string,
+	episodeIdOrUrl: string,
+): Promise<Episode> {
+	const token = await getAccessToken(clientId, clientSecret);
+	const id = episodeIdOrUrl.includes("spotify.com/episode/")
+		? episodeIdOrUrl.split("spotify.com/episode/")[1].split(/[?#]/)[0]
+		: episodeIdOrUrl.trim();
+	const url = `${SPOTIFY_API_BASE_ADDRESS}/episodes/${id}`;
+	clog("getEpisode", `GET ${url}`);
+	const t0 = Date.now();
+
+	try {
+		const response: RequestUrlResponse = await requestUrl({
+			url,
+			method: "GET",
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		const { json } = response;
+		cres("getEpisode", response.status, Date.now() - t0, json);
+		if (response.status !== 200) {
+			throw new Error(json?.error?.message || response.status);
+		}
+		if (!json) throw new Error("Unable to get the episode.");
+		return json as Episode;
+	} catch (e) {
+		clog("getEpisode", "error", e);
+		throw new Error("Unable to get the episode.");
 	}
 }
 
