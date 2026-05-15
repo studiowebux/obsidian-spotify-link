@@ -25,6 +25,7 @@ import {
 import {
 	getAllPlaylists,
 	getArtist,
+	getEpisode,
 	getPlaylistsForTrack,
 	getSpotifyUrl,
 	getTrack,
@@ -200,14 +201,25 @@ export default class SpotifyLinkPlugin extends Plugin {
 		// the selected entry. Recover by parsing the track ID out of the
 		// embedded Spotify URL and re-fetching the underlying Track object.
 		if (typeof track === "string") {
-			const m = track.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
-			if (!m) return name;
+			const trackMatch = track.match(/open\.spotify\.com\/track\/([A-Za-z0-9]+)/);
+			const episodeMatch = track.match(/open\.spotify\.com\/episode\/([A-Za-z0-9]+)/);
 			try {
-				track = await getTrack(
-					this.settings.spotifyClientId,
-					this.settings.spotifyClientSecret,
-					m[1],
-				);
+				if (trackMatch) {
+					track = await getTrack(
+						this.settings.spotifyClientId,
+						this.settings.spotifyClientSecret,
+						trackMatch[1],
+					);
+				} else if (episodeMatch) {
+					const episode = await getEpisode(
+						this.settings.spotifyClientId,
+						this.settings.spotifyClientSecret,
+						episodeMatch[1],
+					);
+					return episode.name;
+				} else {
+					return name;
+				}
 			} catch (e) {
 				console.error(
 					"Spotify Link Plugin: getName re-fetch failed",
