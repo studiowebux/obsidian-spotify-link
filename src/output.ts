@@ -1,14 +1,17 @@
-import { getAlbum, getArtist, getPlaylistsForTrack, getTrack } from "./api";
-import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode";
-import { getPlaylistMessage } from "./playlist";
+import { getAlbum, getArtist, getPlaylistsForTrack, getTrack } from "./api.ts";
+import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode.ts";
 import {
 	getRecentlyPlayedTrackMessage,
 	getTrackMessage,
 	getTrackMessageTimestamp,
 	getTrackType,
-} from "./track";
-import { AlbumDetail, CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types";
+} from "./track.ts";
+import type { AlbumDetail, CurrentlyPlayingTrack, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types.ts";
 
+
+function needsAlbum(template: string): boolean {
+	return /\{\{?\s*album_(popularity|genres[_a-z]*)\s*\}?\}/i.test(template);
+}
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -35,11 +38,11 @@ async function _processTrack(
 	template: string,
 	options?: TemplateOptions,
 ): Promise<TrackProcessingResult> {
-	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template) || /\{\{?\s*album_genres[_a-z]*\s*\}?\}/i.test(template);
-
 	const [artists, album] = await Promise.all([
 		Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
-		needsAlbum ? getAlbum(clientId, clientSecret, track.album.id) : Promise.resolve(undefined),
+		needsAlbum(template)
+			? getAlbum(clientId, clientSecret, track.album.id)
+			: Promise.resolve(undefined),
 	]);
 
 	const playlistsEnabled = options?.enablePlaylists !== false;
@@ -83,24 +86,32 @@ export async function processRecentlyPlayedTracks(
 	template = `'{{ song_name }}' by {{ artists }} from {{ album }} released in {{ album_release }} @ {{ played_at }}`,
 	options?: TemplateOptions,
 ): Promise<string> {
-	const messages: string[] = [];
-	const needsAlbum = /\{\{?\s*album_popularity\s*\}?\}/i.test(template) || /\{\{?\s*album_genres[_a-z]*\s*\}?\}/i.test(template);
-	if (data && data.items) {
-		for (const item of data.items) {
-			const track = item.track as Track;
-			const [artists, album] = await Promise.all([
-				Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
-				needsAlbum ? getAlbum(clientId, clientSecret, track.album.id) : Promise.resolve(undefined as AlbumDetail | undefined),
-			]);
-			messages.push(
-				getRecentlyPlayedTrackMessage(item, artists, template, options, album),
-			);
-		}
-
-		return messages.join("\n");
+	if (!data?.items?.length) {
+		throw new Error(
+			"No recently played tracks found. Spotify only returns plays from the current day.",
+		);
 	}
 
-	return "Nothing fetched from Spotify API.";
+	// An existing install can have this template saved as an empty string.
+	const resolved = template.trim()
+		? template
+		: "- '{{ song_name }}' by {{ artists }} from {{ album }} @ {{ played_at }}";
+
+	const messages: string[] = [];
+	for (const item of data.items) {
+		const track = item.track as Track;
+		const [artists, album] = await Promise.all([
+			Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
+			needsAlbum(resolved)
+				? getAlbum(clientId, clientSecret, track.album.id)
+				: Promise.resolve(undefined as AlbumDetail | undefined),
+		]);
+		messages.push(
+			getRecentlyPlayedTrackMessage(item, artists, resolved, options, album),
+		);
+	}
+
+	return messages.join("\n");
 }
 
 export async function processTrackById(
@@ -112,26 +123,4 @@ export async function processTrackById(
 ): Promise<TrackProcessingResult> {
 	const track = await getTrack(clientId, clientSecret, trackIdOrUrl);
 	return _processTrack(clientId, clientSecret, track, template, options);
-}
-
-export function processAllPlaylists(
-	playlists: PlaylistDetail[],
-	template: string,
-	options?: TemplateOptions,
-): string {
-	if (!playlists || playlists.length === 0) {
-		return "No playlists found.";
-	}
-
-	return playlists
-		.map((playlist) => getPlaylistMessage(playlist, template, options))
-		.join("\n");
-}
-
-export function processSinglePlaylist(
-	playlist: PlaylistDetail,
-	template: string,
-	options?: TemplateOptions,
-): string {
-	return getPlaylistMessage(playlist, template, options);
 }

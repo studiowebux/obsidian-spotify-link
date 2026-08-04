@@ -1,4 +1,26 @@
-import { PlaylistDetail, TemplateOptions } from "./types";
+import type { PlaylistDetail, TemplateOptions } from "./types.ts";
+
+export function processAllPlaylists(
+	playlists: PlaylistDetail[],
+	template: string,
+	options?: TemplateOptions,
+): string {
+	if (!playlists || playlists.length === 0) {
+		return "No playlists found.";
+	}
+
+	return playlists
+		.map((playlist) => getPlaylistMessage(playlist, template, options))
+		.join("\n");
+}
+
+export function processSinglePlaylist(
+	playlist: PlaylistDetail,
+	template: string,
+	options?: TemplateOptions,
+): string {
+	return getPlaylistMessage(playlist, template, options);
+}
 
 export function getPlaylistMessage(
 	playlist: PlaylistDetail,
@@ -25,7 +47,7 @@ export function getPlaylistMessage(
 		)
 		.replace(
 			/{{ playlist_track_count }}|{{playlist_track_count}}/g,
-			String(playlist.tracks.total),
+			String(playlist.items.total),
 		)
 		.replace(
 			/{{ playlist_cover_large(\\?\|[^\s}]*)? }}|{{playlist_cover_large(\\?\|[^\s}]*)?}}/g,

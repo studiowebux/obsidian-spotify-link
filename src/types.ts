@@ -330,14 +330,14 @@ export type PlaylistDetail = {
 	owner: { id: string; display_name: string };
 	public: boolean;
 	collaborative: boolean;
-	tracks: { total: number };
+	items: { total: number };
 };
 
 export type AlbumDetail = {
 	id: string;
 	name: string;
-	popularity: number;
-	genres: string[];
+	popularity?: number;
+	genres?: string[];
 };
 
 export type RecentlyPlayed = {

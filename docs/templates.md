@@ -92,10 +92,10 @@ Output: `#Artist_One #Artist_Two`
 
 **Artist Metadata**
 
-- `{{ followers }}` - Follower count (single: number, multiple: "Name: count")
-- `{{ popularity }}` - Artist popularity score 0–100 (single: number, multiple: "Name: score")
-- `{{ track_popularity }}` - Track popularity score 0–100 (Spotify's score for the track itself)
-- `{{ album_popularity }}` - Album popularity score 0–100. Requires a separate API call (`GET /v1/albums/{id}`) — only fetched when the token is present in the template
+- `{{ followers }}` - **Deprecated** — renders `_deprecated_`. See [Deprecated variables](#deprecated-variables)
+- `{{ popularity }}` - **Deprecated** — renders `_deprecated_`
+- `{{ track_popularity }}` - **Deprecated** — renders `_deprecated_`
+- `{{ album_popularity }}` - **Deprecated** — renders `_deprecated_` when Spotify returns no value. Fetched via `GET /v1/albums/{id}`, only when the variable is present in the template
 - `{{ artist_image }}` - Artist images as markdown image (accepts inline size override, see [Image dimensions](#image-dimensions))
 - `{{ artist_image_link }}` - Artist images as markdown link (no `!` prefix)
 - `{{ artist_image_url }}` - Artist image URLs (plain text)
@@ -103,9 +103,9 @@ Output: `#Artist_One #Artist_Two`
 - `{{ genres_array }}` - Artist genre list formatted for YAML/Dataview arrays: `"genre1", "genre2"`, deduplicated across all artists
 - `{{ genres_hashtag }}` - Artist genres as hashtags: `#genre_one #genre_two`, deduplicated across all artists
 - `{{ genres_by_artist }}` - Per-artist genre breakdown: `Artist1: genre1, genre2 | Artist2: genre3`. Separator defaults to ` | `. Use `{{ genres_by_artist:SEP }}` to override — e.g. `{{ genres_by_artist:; }}` outputs `Artist1: genre1, genre2;Artist2: genre3`. Trailing whitespace in the separator is trimmed.
-- `{{ album_genres }}` - Comma-separated album genres. Requires a separate API call (`GET /v1/albums/{id}`) — only fetched when the token is present in the template. Returns empty string if the album has no genres.
-- `{{ album_genres_array }}` - Album genres formatted for YAML/Dataview arrays: `"genre1", "genre2"`
-- `{{ album_genres_hashtag }}` - Album genres as hashtags: `#genre_one #genre_two`
+- `{{ album_genres }}` - **Deprecated** — album genres are empty for practically every album, so this renders `_deprecated_` unless Spotify returns some
+- `{{ album_genres_array }}` - **Deprecated** — as above, YAML/Dataview array form
+- `{{ album_genres_hashtag }}` - **Deprecated** — as above, hashtag form
 
 **Playlists**
 
@@ -375,14 +375,27 @@ Multiple artists: "Name: count" per artist
 
 Template automatically adapts based on artist count.
 
-### Genre Deduplication
+### Genres — best effort
 
-Spotify assigns genres at the **artist** and **album** level — there are no genres on the track object itself.
+Spotify assigns genres at the **artist** and **album** level, never on the track itself. Album genres have come back empty for years, so `{{ album_genres* }}` renders `_deprecated_` whenever the album carries none — which in practice is almost always.
 
-- `{{ genres }}`, `{{ genres_array }}`, `{{ genres_hashtag }}` — sourced from the artist(s). Collected from all artists on the track and deduplicated automatically. A track with two artists sharing a genre will still list that genre only once.
-- `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}` — sourced from the album. Fetched via a separate API call; only made when the token is present in the template.
+`{{ genres }}`, `{{ genres_array }}`, `{{ genres_hashtag }}` and `{{ genres_by_artist }}` are collected from every artist on the track and deduplicated — two artists sharing a genre list it once.
 
-In practice, album-level genres on Spotify are often empty or sparse. Artist genres tend to be more populated.
+**Why your genres are often empty:** Spotify only fills this field for artists it has classified. Major-label artists are usually populated; independent artists frequently are not, even when genres were supplied through a distributor. An empty result is Spotify having no data, not a plugin failure. If you need reliable genre data, tag it yourself in the note or source it from MusicBrainz/Last.fm.
+
+### Deprecated variables
+
+These render the literal text `_deprecated_`:
+
+| Variable | Why |
+|---|---|
+| `{{ popularity }}`, `{{ followers }}` | Spotify removed `popularity` and `followers` from the artist object for Development Mode apps in [February 2026](https://developer.spotify.com/documentation/web-api/references/changes/february-2026) |
+| `{{ track_popularity }}` | `popularity` removed from the track object |
+| `{{ album_popularity }}` | `popularity` removed from the album object |
+| `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}` | Album genres come back empty for practically every album |
+| `{{ audio_preview_url }}` | Preview URLs are no longer served |
+
+The variables are kept so existing templates keep working — removing them would leave raw `{{ popularity }}` text in your notes. Where Spotify does still return a value (Extended Quota Mode apps), the real value is rendered instead of the marker. Delete these from your templates when convenient; they will be removed in a future release.
 
 ### Timestamp Formats
 

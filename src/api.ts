@@ -1,4 +1,5 @@
-import { Notice, RequestUrlResponse, requestUrl } from "obsidian";
+import { Notice, RequestUrlParam, RequestUrlResponse, requestUrl } from "obsidian";
+import { SpotifyCall, SpotifyError, describeSpotifyError, parseBody } from "./errors.ts";
 import {
 	AccessTokenResponse,
 	AlbumDetail,
@@ -13,9 +14,10 @@ import {
 	RefreshTokenResponse,
 	SpotifyAuthCallback,
 	Track,
-} from "./types";
-import { prepareData } from "./utils";
-import { processCurrentlyPlayingTrackInput } from "./output";
+} from "./types.ts";
+import { prepareData } from "./utils.ts";
+import { buildLoginUrl } from "./auth.ts";
+import { processCurrentlyPlayingTrackInput } from "./output.ts";
 
 export const SPOTIFY_API_BASE_ADDRESS = "https://api.spotify.com/v1";
 export const REDIRECT_URI = "obsidian://spotify-auth/";
@@ -30,6 +32,50 @@ function cres(fn: string, status: number, elapsed: number, json: unknown): void 
 	if (DEBUG) console.debug(`[spotify-link] ${fn} — status ${status} (${elapsed}ms)`, json);
 }
 
+type SpotifyResponse = {
+	status: number;
+	headers: Record<string, string>;
+	json: any;
+};
+
+/**
+ * requestUrl throws on status >= 400 by default, hiding Spotify's error body,
+ * and its .json getter throws on an empty one. Both are handled here.
+ */
+async function spotifyRequest(
+	params: RequestUrlParam,
+	call: SpotifyCall,
+): Promise<SpotifyResponse> {
+	const t0 = Date.now();
+	clog(call.fn, `${params.method ?? "GET"} ${params.url}`);
+
+	let response: RequestUrlResponse;
+	try {
+		response = await requestUrl({ ...params, throw: false });
+	} catch (e) {
+		clog(call.fn, "network error", e);
+		throw new SpotifyError(describeSpotifyError(0, null, call), 0, call, e);
+	}
+
+	const json = parseBody(response.text);
+	cres(call.fn, response.status, Date.now() - t0, json);
+
+	if (response.status >= 400) {
+		throw new SpotifyError(
+			describeSpotifyError(response.status, json, call, response.headers),
+			response.status,
+			call,
+			json,
+		);
+	}
+
+	return { status: response.status, headers: response.headers, json };
+}
+
+function authHeader(token: string): Record<string, string> {
+	return { Authorization: `Bearer ${token}` };
+}
+
 ///
 /// AUTHENTICATION FLOW
 ///
@@ -41,8 +87,7 @@ export function generateLoginUrl(
 	scope: string,
 	redirectUri: string,
 ): string {
-	const q = `response_type=code&client_id=${clientId}&scope=${scope}&redirect_uri=${redirectUri}&state=${state}`;
-	return `https://accounts.spotify.com/authorize?${q}`;
+	return buildLoginUrl(clientId, state, scope, redirectUri);
 }
 
 // Step 2
@@ -77,13 +122,12 @@ async function requestAccessToken(
 	code: string,
 	redirect_uri: string,
 ): Promise<AuthorizationCodeResponse> {
-	clog("requestAccessToken", "POST https://accounts.spotify.com/api/token");
 	const data = {
 		code: code,
 		redirect_uri: redirect_uri,
 		grant_type: "authorization_code",
 	};
-	const res = await requestUrl({
+	const res = await spotifyRequest({
 		url: "https://accounts.spotify.com/api/token",
 		method: "POST",
 		headers: {
@@ -91,8 +135,7 @@ async function requestAccessToken(
 			Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
 		},
 		body: prepareData(data),
-	});
-	cres("requestAccessToken", res.status, 0, res.json);
+	}, { fn: "requestAccessToken", auth: true });
 	return res.json;
 }
 
@@ -115,14 +158,13 @@ export async function requestRefreshToken(
 	clientId: string,
 	clientSecret: string,
 ): Promise<string> {
-	clog("requestRefreshToken", "POST https://accounts.spotify.com/api/token");
 	const refreshToken = getRefreshToken();
 	const data = {
 		client_id: clientId,
 		refresh_token: refreshToken,
 		grant_type: "refresh_token",
 	};
-	const res = await requestUrl({
+	const res = await spotifyRequest({
 		url: "https://accounts.spotify.com/api/token",
 		method: "POST",
 		headers: {
@@ -130,8 +172,7 @@ export async function requestRefreshToken(
 			Authorization: `Basic ${btoa(clientId + ":" + clientSecret)}`,
 		},
 		body: prepareData(data),
-	});
-	cres("requestRefreshToken", res.status, 0, res.json);
+	}, { fn: "requestRefreshToken", auth: true });
 	const response: RefreshTokenResponse = res.json;
 
 	setAccessToken(response.access_token);
@@ -151,33 +192,23 @@ export async function getCurrentlyPlayingTrack(
 	clientSecret: string,
 ): Promise<CurrentlyPlayingTrack> {
 	const token = await getAccessToken(clientId, clientSecret);
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing?additional_types=track,episode`;
-	clog("getCurrentlyPlayingTrack", `GET ${url}`);
-	const t0 = Date.now();
-
-	try {
-		const response: RequestUrlResponse = await requestUrl({
-			url,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me/player/currently-playing?additional_types=track,episode`,
 			method: "GET",
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		});
-		const { json } = response;
-		cres("getCurrentlyPlayingTrack", response.status, Date.now() - t0, json);
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
+			headers: authHeader(token),
+		},
+		{ fn: "getCurrentlyPlayingTrack", scope: "user-read-currently-playing" },
+	);
 
-		const currentlyPlayingTrack: CurrentlyPlayingTrack | null = json;
-
-		if (!currentlyPlayingTrack)
-			throw new Error("Unable to get the currently playing track.");
-		return currentlyPlayingTrack;
-	} catch (e) {
-		clog("getCurrentlyPlayingTrack", "error", e);
-		throw new Error("Unable to get the currently playing track.");
+	// Spotify answers 204 with an empty body when nothing is playing.
+	if (response.status === 204 || !response.json) {
+		throw new Error(
+			"Nothing is currently playing on Spotify. Start playback and try again.",
+		);
 	}
+
+	return response.json as CurrentlyPlayingTrack;
 }
 
 export async function getTrack(
@@ -190,27 +221,17 @@ export async function getTrack(
 	const id = trackIdOrUrl.includes("spotify.com/track/")
 		? trackIdOrUrl.split("spotify.com/track/")[1].split(/[?#]/)[0]
 		: trackIdOrUrl.trim();
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/tracks/${id}`;
-	clog("getTrack", `GET ${url}`);
-	const t0 = Date.now();
-
-	try {
-		const response: RequestUrlResponse = await requestUrl({
-			url,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/tracks/${id}`,
 			method: "GET",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		const { json } = response;
-		cres("getTrack", response.status, Date.now() - t0, json);
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
-		if (!json) throw new Error("Unable to get the track.");
-		return json as Track;
-	} catch (e) {
-		clog("getTrack", "error", e);
-		throw new Error("Unable to get the track.");
-	}
+			headers: authHeader(token),
+		},
+		{ fn: "getTrack" },
+	);
+
+	if (!response.json) throw new Error(`No track found for "${trackIdOrUrl}".`);
+	return response.json as Track;
 }
 
 export async function getEpisode(
@@ -222,27 +243,17 @@ export async function getEpisode(
 	const id = episodeIdOrUrl.includes("spotify.com/episode/")
 		? episodeIdOrUrl.split("spotify.com/episode/")[1].split(/[?#]/)[0]
 		: episodeIdOrUrl.trim();
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/episodes/${id}`;
-	clog("getEpisode", `GET ${url}`);
-	const t0 = Date.now();
-
-	try {
-		const response: RequestUrlResponse = await requestUrl({
-			url,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/episodes/${id}`,
 			method: "GET",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		const { json } = response;
-		cres("getEpisode", response.status, Date.now() - t0, json);
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
-		if (!json) throw new Error("Unable to get the episode.");
-		return json as Episode;
-	} catch (e) {
-		clog("getEpisode", "error", e);
-		throw new Error("Unable to get the episode.");
-	}
+			headers: authHeader(token),
+		},
+		{ fn: "getEpisode" },
+	);
+
+	if (!response.json) throw new Error(`No episode found for "${episodeIdOrUrl}".`);
+	return response.json as Episode;
 }
 
 export async function getCurrentlyPlayingTrackAsString(
@@ -258,24 +269,16 @@ export async function getMe(
 	clientSecret: string,
 ): Promise<Me> {
 	const token = await getAccessToken(clientId, clientSecret);
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/me`;
-	clog("getMe", `GET ${url}`);
-	const t0 = Date.now();
-
-	const response: RequestUrlResponse = await requestUrl({
-		url,
-		method: "GET",
-		headers: {
-			Authorization: `Bearer ${token}`,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/me`,
+			method: "GET",
+			headers: authHeader(token),
 		},
-	});
-	const { json } = response;
-	cres("getMe", response.status, Date.now() - t0, json);
-	if (response.status !== 200) {
-		throw new Error(json?.error?.message || response.status);
-	}
+		{ fn: "getMe" },
+	);
 
-	return json as Me;
+	return response.json as Me;
 }
 
 export async function getArtist(
@@ -284,30 +287,17 @@ export async function getArtist(
 	artistId: string,
 ): Promise<Artist> {
 	const token = await getAccessToken(clientId, clientSecret);
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/artists/${artistId}`;
-	clog("getArtist", `GET ${url}`);
-	const t0 = Date.now();
-
-	try {
-		const response: RequestUrlResponse = await requestUrl({
-			url,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/artists/${artistId}`,
 			method: "GET",
-			headers: {
-				Authorization: `Bearer ${token}`,
-			},
-		});
-		const { json } = response;
-		cres("getArtist", response.status, Date.now() - t0, json);
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
-		const artist: Artist | null = json;
-		if (!artist) throw new Error("Unable to get the artist.");
-		return artist;
-	} catch (e) {
-		clog("getArtist", "error", e);
-		throw new Error("Unable to get the artist.");
-	}
+			headers: authHeader(token),
+		},
+		{ fn: "getArtist" },
+	);
+
+	if (!response.json) throw new Error(`No artist found for id "${artistId}".`);
+	return response.json as Artist;
 }
 
 export async function getAlbum(
@@ -316,27 +306,23 @@ export async function getAlbum(
 	albumId: string,
 ): Promise<AlbumDetail> {
 	const token = await getAccessToken(clientId, clientSecret);
-	const url = `${SPOTIFY_API_BASE_ADDRESS}/albums/${albumId}`;
-	clog("getAlbum", `GET ${url}`);
-	const t0 = Date.now();
-
-	try {
-		const response: RequestUrlResponse = await requestUrl({
-			url,
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/albums/${albumId}`,
 			method: "GET",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		const { json } = response;
-		cres("getAlbum", response.status, Date.now() - t0, json);
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
-		if (!json) throw new Error("Unable to get the album.");
-		return { id: json.id, name: json.name, popularity: json.popularity, genres: json.genres ?? [] } as AlbumDetail;
-	} catch (e) {
-		clog("getAlbum", "error", e);
-		throw new Error("Unable to get the album.");
-	}
+			headers: authHeader(token),
+		},
+		{ fn: "getAlbum" },
+	);
+
+	const json = response.json;
+	if (!json) throw new Error(`No album found for id "${albumId}".`);
+	return {
+		id: json.id,
+		name: json.name,
+		popularity: json.popularity,
+		genres: json.genres ?? [],
+	};
 }
 
 export async function getSpotifyUrl(
@@ -390,62 +376,68 @@ export async function getRecentlyPlayedTracks(
 ): Promise<RecentlyPlayed | null> {
 	const token = await getAccessToken(clientId, clientSecret);
 
-	try {
-		const date = new Date();
-		date.setHours(0, 0, 0, 0);
-		const beginningOfDayEpochTime = date.getTime();
+	const date = new Date();
+	date.setHours(0, 0, 0, 0);
+	const beginningOfDayEpochTime = date.getTime();
 
-		const reqUrl =
-			url ||
-			`${SPOTIFY_API_BASE_ADDRESS}/me/player/recently-played?limit=${LIMIT}&after=${beginningOfDayEpochTime}`;
-		clog("getRecentlyPlayedTracks", `GET ${reqUrl}`);
-		const t0 = Date.now();
-
-		const response: RequestUrlResponse = await requestUrl({
-			url: reqUrl,
+	const response = await spotifyRequest(
+		{
+			url: url ||
+				`${SPOTIFY_API_BASE_ADDRESS}/me/player/recently-played?limit=${LIMIT}&after=${beginningOfDayEpochTime}`,
 			method: "GET",
-			headers: {
-				Authorization: `Bearer ${token}`,
+			headers: authHeader(token),
+		},
+		{ fn: "getRecentlyPlayedTracks", scope: "user-read-recently-played" },
+	);
+
+	const { json } = response;
+	if (!json) {
+		throw new Error("Spotify returned no recently played tracks for today.");
+	}
+
+	if (!recentlyPlayed) {
+		recentlyPlayed = json;
+	} else {
+		recentlyPlayed.items.unshift(...json.items);
+	}
+
+	if (json.next) {
+		return getRecentlyPlayedTracks(
+			clientId,
+			clientSecret,
+			json.next,
+			recentlyPlayed,
+		);
+	}
+
+	return recentlyPlayed;
+}
+
+async function isTrackSaved(token: string, trackId: string): Promise<boolean> {
+	try {
+		const res = await spotifyRequest(
+			{
+				url: `${SPOTIFY_API_BASE_ADDRESS}/me/library/contains?uris=spotify:track:${trackId}`,
+				method: "GET",
+				headers: authHeader(token),
 			},
-		});
-		const { json } = response;
-		cres("getRecentlyPlayedTracks", response.status, Date.now() - t0, json);
-
-		if (response.status !== 200) {
-			throw new Error(json?.error?.message || response.status);
-		}
-		if (!recentlyPlayed) {
-			recentlyPlayed = json;
-		} else {
-			recentlyPlayed.items.unshift(...json.items);
-		}
-
-		if (json?.next) {
-			return getRecentlyPlayedTracks(
-				clientId,
-				clientSecret,
-				json.next,
-				recentlyPlayed,
-			);
-		}
-		if (!json) throw new Error("Unable to get recently played tracks.");
-		return recentlyPlayed;
+			{ fn: "isTrackSaved", scope: "user-library-read" },
+		);
+		return res.json?.[0] === true;
 	} catch (e) {
-		clog("getRecentlyPlayedTracks", "error", e);
-		throw new Error("Unable to get recently played tracks.");
+		new Notice(
+			"Spotify Link: Could not check Liked Songs — " +
+				(e instanceof Error ? e.message : String(e)),
+			10000,
+		);
+		return false;
 	}
 }
 
 /**
- * Returns the names of the user's owned playlists that contain the given track,
- * plus "Liked Songs" if the track is saved in the user's library.
- *
- * Optimizations:
- *   - Liked Songs: single /me/tracks/contains call
- *   - Playlist collection: fetch page 1 to get total, then fetch remaining pages in parallel
- *   - Playlist checking: parallel batches (configurable concurrency)
- *   - fields param on tracks endpoint to minimize payload
- *   - Early exit per playlist once track is found
+ * Names of the user's owned playlists containing the track, plus "Liked Songs"
+ * when it is saved. Pages are fetched in parallel, playlists checked in batches
+ * of `concurrency`, and each playlist exits early once the track is found.
  */
 export async function getPlaylistsForTrack(
 	clientId: string,
@@ -461,24 +453,8 @@ export async function getPlaylistsForTrack(
 	const notice = new Notice("Spotify Link: Fetching playlists...", 0);
 	try {
 		// Step 1: Check Liked Songs (single API call)
-		try {
-			const likedUrl = `${SPOTIFY_API_BASE_ADDRESS}/me/tracks/contains?ids=${trackId}`;
-			clog("getPlaylistsForTrack", `GET ${likedUrl}`);
-			const likedRes: RequestUrlResponse = await requestUrl({
-				url: likedUrl,
-				method: "GET",
-				headers: { Authorization: `Bearer ${token}` },
-			});
-			cres("getPlaylistsForTrack/liked-songs", likedRes.status, 0, likedRes.json);
-			if (likedRes.status === 200 && likedRes.json?.[0] === true) {
-				matchingNames.push("Liked Songs");
-			}
-		} catch (e) {
-			clog("getPlaylistsForTrack", "liked-songs check error", e);
-			new Notice(
-				"Spotify Link: Unable to check Liked Songs. Add 'user-library-read' to your Spotify Scopes and re-authenticate.",
-				10000,
-			);
+		if (await isTrackSaved(token, trackId)) {
+			matchingNames.push("Liked Songs");
 		}
 
 		// Step 2: Collect all owned playlists (page 1 sequential, then remaining pages in parallel)
@@ -486,21 +462,15 @@ export async function getPlaylistsForTrack(
 		const ownedPlaylists: PlaylistSummary[] = [];
 		const PAGE_SIZE = 50;
 
-		const firstPageUrl = `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`;
-		clog("getPlaylistsForTrack", `GET ${firstPageUrl}`);
-		const firstRes: RequestUrlResponse = await requestUrl({
-			url: firstPageUrl,
-			method: "GET",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		cres("getPlaylistsForTrack/playlists-page-1", firstRes.status, 0, firstRes.json);
-		if (firstRes.status === 403) {
-			notice.hide();
-			throw new Error(
-				"Missing 'playlist-read-private' scope. Add it to your Spotify Scopes in plugin settings, then click the Spotify icon to re-authenticate.",
-			);
-		}
-		if (firstRes.status !== 200 || !firstRes.json?.items) {
+		const firstRes = await spotifyRequest(
+			{
+				url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`,
+				method: "GET",
+				headers: authHeader(token),
+			},
+			{ fn: "getPlaylistsForTrack", scope: "playlist-read-private" },
+		);
+		if (!firstRes.json?.items) {
 			notice.hide();
 			return matchingNames;
 		}
@@ -520,14 +490,15 @@ export async function getPlaylistsForTrack(
 			clog("getPlaylistsForTrack", `fetching ${remainingPages.length} additional playlist page(s) in parallel`);
 			const pageResults = await Promise.all(
 				remainingPages.map(async (offset) => {
-					const res: RequestUrlResponse = await requestUrl({
-						url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
-						method: "GET",
-						headers: { Authorization: `Bearer ${token}` },
-					});
-					cres(`getPlaylistsForTrack/playlists-page-offset=${offset}`, res.status, 0, res.json);
-					if (res.status !== 200 || !res.json?.items) return [];
-					return res.json.items;
+					const res = await spotifyRequest(
+						{
+							url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
+							method: "GET",
+							headers: authHeader(token),
+						},
+						{ fn: `getPlaylistsForTrack/page@${offset}`, scope: "playlist-read-private" },
+					);
+					return res.json?.items ?? [];
 				}),
 			);
 			for (const items of pageResults) {
@@ -544,31 +515,26 @@ export async function getPlaylistsForTrack(
 		// Step 3: Check playlists in parallel batches
 		async function checkPlaylist(playlist: PlaylistSummary): Promise<{ name: string; found: boolean }> {
 			let itemsUrl: string | null =
-				`${SPOTIFY_API_BASE_ADDRESS}/playlists/${playlist.id}/tracks?limit=100&fields=items(track(id)),next`;
+				`${SPOTIFY_API_BASE_ADDRESS}/playlists/${playlist.id}/items?limit=50&fields=items(item(id)),next`;
 			let found = false;
-			let page = 0;
 
 			while (itemsUrl && !found) {
-				clog("getPlaylistsForTrack", `checkPlaylist "${playlist.name}" page ${page} GET ${itemsUrl}`);
-				const res: RequestUrlResponse = await requestUrl({
-					url: itemsUrl,
-					method: "GET",
-					headers: { Authorization: `Bearer ${token}` },
-				});
-				cres(`getPlaylistsForTrack/checkPlaylist "${playlist.name}" page ${page}`, res.status, 0, res.json);
-				if (res.status !== 200) break;
+				const res = await spotifyRequest(
+					{ url: itemsUrl, method: "GET", headers: authHeader(token) },
+					{
+						fn: `getPlaylistsForTrack "${playlist.name}"`,
+						scope: "playlist-read-private",
+					},
+				);
+
 				const data = res.json;
 				if (!data?.items) break;
-				for (const item of data.items) {
-					if (item.track?.id === trackId) {
-						found = true;
-						break;
-					}
-				}
+				found = data.items.some((entry: { item?: { id?: string } }) =>
+					entry.item?.id === trackId
+				);
 				itemsUrl = data.next ?? null;
-				page++;
 			}
-			clog("getPlaylistsForTrack", `checkPlaylist "${playlist.name}" found=${found}`);
+
 			return { name: playlist.name, found };
 		}
 
@@ -596,6 +562,20 @@ export async function getPlaylistsForTrack(
 	return matchingNames;
 }
 
+function toPlaylistDetail(pl: Record<string, any>): PlaylistDetail {
+	return {
+		id: pl.id,
+		name: pl.name,
+		description: pl.description ?? "",
+		external_urls: pl.external_urls,
+		images: pl.images ?? [],
+		owner: { id: pl.owner?.id, display_name: pl.owner?.display_name ?? "" },
+		public: pl.public ?? false,
+		collaborative: pl.collaborative ?? false,
+		items: { total: pl.items?.total ?? 0 },
+	};
+}
+
 export async function getAllPlaylists(
 	clientId: string,
 	clientSecret: string,
@@ -607,39 +587,22 @@ export async function getAllPlaylists(
 	clog("getAllPlaylists", "start");
 	const notice = new Notice("Spotify Link: Fetching all playlists...", 0);
 	try {
-		const firstPageUrl = `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`;
-		clog("getAllPlaylists", `GET ${firstPageUrl}`);
-		const t0 = Date.now();
-		const firstRes: RequestUrlResponse = await requestUrl({
-			url: firstPageUrl,
-			method: "GET",
-			headers: { Authorization: `Bearer ${token}` },
-		});
-		cres("getAllPlaylists/page-1", firstRes.status, Date.now() - t0, firstRes.json);
-		if (firstRes.status === 403) {
-			notice.hide();
-			throw new Error(
-				"Missing 'playlist-read-private' scope. Add it to your Spotify Scopes in plugin settings, then click the Spotify icon to re-authenticate.",
-			);
-		}
-		if (firstRes.status !== 200 || !firstRes.json?.items) {
+		const firstRes = await spotifyRequest(
+			{
+				url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=0`,
+				method: "GET",
+				headers: authHeader(token),
+			},
+			{ fn: "getAllPlaylists", scope: "playlist-read-private" },
+		);
+		if (!firstRes.json?.items) {
 			notice.hide();
 			return playlists;
 		}
 
 		const total = firstRes.json.total ?? 0;
 		for (const pl of firstRes.json.items) {
-			playlists.push({
-				id: pl.id,
-				name: pl.name,
-				description: pl.description ?? "",
-				external_urls: pl.external_urls,
-				images: pl.images ?? [],
-				owner: { id: pl.owner?.id, display_name: pl.owner?.display_name ?? "" },
-				public: pl.public ?? false,
-				collaborative: pl.collaborative ?? false,
-				tracks: { total: pl.tracks?.total ?? 0 },
-			});
+			playlists.push(toPlaylistDetail(pl));
 		}
 
 		if (total > PAGE_SIZE) {
@@ -647,32 +610,22 @@ export async function getAllPlaylists(
 			for (let offset = PAGE_SIZE; offset < total; offset += PAGE_SIZE) {
 				remainingPages.push(offset);
 			}
-			clog("getAllPlaylists", `fetching ${remainingPages.length} additional page(s) in parallel`);
 			const pageResults = await Promise.all(
 				remainingPages.map(async (offset) => {
-					const res: RequestUrlResponse = await requestUrl({
-						url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
-						method: "GET",
-						headers: { Authorization: `Bearer ${token}` },
-					});
-					cres(`getAllPlaylists/page-offset=${offset}`, res.status, 0, res.json);
-					if (res.status !== 200 || !res.json?.items) return [];
-					return res.json.items;
+					const res = await spotifyRequest(
+						{
+							url: `${SPOTIFY_API_BASE_ADDRESS}/me/playlists?limit=${PAGE_SIZE}&offset=${offset}`,
+							method: "GET",
+							headers: authHeader(token),
+						},
+						{ fn: `getAllPlaylists/page@${offset}`, scope: "playlist-read-private" },
+					);
+					return res.json?.items ?? [];
 				}),
 			);
 			for (const items of pageResults) {
 				for (const pl of items) {
-					playlists.push({
-						id: pl.id,
-						name: pl.name,
-						description: pl.description ?? "",
-						external_urls: pl.external_urls,
-						images: pl.images ?? [],
-						owner: { id: pl.owner?.id, display_name: pl.owner?.display_name ?? "" },
-						public: pl.public ?? false,
-						collaborative: pl.collaborative ?? false,
-						tracks: { total: pl.tracks?.total ?? 0 },
-					});
+					playlists.push(toPlaylistDetail(pl));
 				}
 			}
 		}

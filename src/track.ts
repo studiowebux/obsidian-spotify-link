@@ -1,6 +1,10 @@
-import { formatSpotifyDate, millisToMinutesAndSeconds, padZero } from "./utils";
-import { AlbumDetail, Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types";
+import { DEPRECATED, formatSpotifyDate, millisToMinutesAndSeconds, orDeprecated, padZero } from "./utils.ts";
+import type { AlbumDetail, Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types.ts";
 
+
+function albumGenres(album?: AlbumDetail): string[] {
+	return Array.from(new Set(album?.genres ?? []));
+}
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
 	return data.currently_playing_type;
@@ -134,7 +138,7 @@ export function getTrackMessage(
 		)
 		.replace(/{{ album }}|{{album}}/g, track.album.name)
 		.replace(
-			/{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
+			/{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))?}}/g,
 			(_match, ...tsOpts) => {
 				const matches = tsOpts
 					.slice(0, tsOpts.length - 2)
@@ -219,40 +223,42 @@ export function getTrackMessage(
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.followers?.total ?? 0}`,
+						(artist) => `${artist.name}: ${orDeprecated(artist.followers?.total)}`,
 					)
 					.join(", ")
-				: (artists[0].followers?.total ?? 0).toString(),
+				: orDeprecated(artists[0]?.followers?.total),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.popularity ?? 0}`,
+						(artist) => `${artist.name}: ${orDeprecated(artist.popularity)}`,
 					)
 					.join(", ")
-				: (artists[0].popularity ?? 0).toString(),
+				: orDeprecated(artists[0]?.popularity),
 		)
 		.replace(
 			/{{ track_popularity }}|{{track_popularity}}/g,
-			(track.popularity ?? 0).toString(),
+			orDeprecated(track.popularity),
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			album ? (album.popularity ?? 0).toString() : "",
+			orDeprecated(album?.popularity),
 		)
 		.replace(
 			/{{ album_genres }}|{{album_genres}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+			albumGenres(album).join(", ") || DEPRECATED,
 		)
 		.replace(
 			/{{ album_genres_array }}|{{album_genres_array}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+			albumGenres(album).map((g) => `"${g}"`).join(", ") || DEPRECATED,
 		)
 		.replace(
 			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`).join(" ") : "",
+			albumGenres(album)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
+				.join(" ") || DEPRECATED,
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -430,7 +436,7 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(/{{ album }}|{{album}}/g, track.album.name)
 		.replace(
-			/{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
+			/{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))?}}/g,
 			(_match, ...tsOpts) => {
 				const matches = tsOpts
 					.slice(0, tsOpts.length - 2)
@@ -515,40 +521,42 @@ export function getRecentlyPlayedTrackMessage(
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.followers?.total ?? 0}`,
+						(artist) => `${artist.name}: ${orDeprecated(artist.followers?.total)}`,
 					)
 					.join(", ")
-				: (artists[0].followers?.total ?? 0).toString(),
+				: orDeprecated(artists[0]?.followers?.total),
 		)
 		.replace(
 			/{{ popularity }}|{{popularity}}/g,
 			artists.length > 1
 				? artists
 					?.map(
-						(artist) => `${artist.name}: ${artist.popularity ?? 0}`,
+						(artist) => `${artist.name}: ${orDeprecated(artist.popularity)}`,
 					)
 					.join(", ")
-				: (artists[0].popularity ?? 0).toString(),
+				: orDeprecated(artists[0]?.popularity),
 		)
 		.replace(
 			/{{ track_popularity }}|{{track_popularity}}/g,
-			(track.popularity ?? 0).toString(),
+			orDeprecated(track.popularity),
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			album ? (album.popularity ?? 0).toString() : "",
+			orDeprecated(album?.popularity),
 		)
 		.replace(
 			/{{ album_genres }}|{{album_genres}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).join(", ") : "",
+			albumGenres(album).join(", ") || DEPRECATED,
 		)
 		.replace(
 			/{{ album_genres_array }}|{{album_genres_array}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `"${g}"`).join(", ") : "",
+			albumGenres(album).map((g) => `"${g}"`).join(", ") || DEPRECATED,
 		)
 		.replace(
 			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
-			album ? Array.from(new Set(album.genres ?? [])).map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`).join(" ") : "",
+			albumGenres(album)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
+				.join(" ") || DEPRECATED,
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
