@@ -6,3 +6,5 @@
 - Core Concepts
 	- [Templates](templates.md)
 	- [Community Examples](examples.md)
+- Reference
+	- [Changelog](changelog.md)

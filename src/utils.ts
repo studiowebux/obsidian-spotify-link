@@ -1,3 +1,16 @@
+// Rendered in place of fields Spotify no longer returns.
+export const DEPRECATED = "_deprecated_";
+
+export function orDeprecated(value: unknown): string {
+  return value === undefined || value === null || value === "" ? DEPRECATED : String(value);
+}
+
+export function enabledItems<T extends { enabled: boolean }>(
+  items: T[] | undefined,
+): T[] {
+  return (items ?? []).filter((item) => item.enabled);
+}
+
 export function prepareData(data: { [key: string]: string }) {
   return Object.keys(data)
     .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))

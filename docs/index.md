@@ -23,9 +23,10 @@ Obsidian plugin that integrates Spotify API to insert currently playing tracks a
 - Template support for inline and file-based templates
 - Support for both songs and podcasts
 - Customizable variable substitution system
-- Track and artist popularity scores
 - List all playlists with metadata (single file or individual files)
 - Auto-regenerate playlist notes when adding songs (opt-in)
+
+> **Heads up:** Spotify restricted Development Mode apps in February 2026. The app you create needs an owner with an active Spotify Premium subscription, and a few template variables now render `_deprecated_` because Spotify stopped returning them. See [Deprecated variables](templates.md#deprecated-variables).
 
 ## Quick Start
 

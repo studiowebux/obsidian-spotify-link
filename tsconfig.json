@@ -7,6 +7,7 @@
     "allowJs": true,
     "noImplicitAny": true,
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,

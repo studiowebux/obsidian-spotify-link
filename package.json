@@ -1,11 +1,12 @@
 {
 	"name": "spotify-link",
-	"version": "1.15.3",
+	"version": "1.16.0",
 	"description": "Include the song you're currently listening to in your Obsidian (https://obsidian.md) note",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "node --test \"__tests__/*.test.js\"",
 		"version": "node version-bump.mjs && git add manifest.json versions.json"
 	},
 	"keywords": [

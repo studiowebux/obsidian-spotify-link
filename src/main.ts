@@ -21,7 +21,7 @@ import {
 	PlaylistDetail,
 	RecentlyPlayed,
 	Track,
-} from "./types";
+} from "./types.ts";
 import {
 	getAllPlaylists,
 	getArtist,
@@ -31,24 +31,24 @@ import {
 	getTrack,
 	handleCallback,
 	requestRefreshToken,
-} from "./api";
-import SettingsTab from "./settingsTab";
-import { handleEditor, handlePlaylistsEditor, handleTemplateEditor } from "./ui";
-import { onLogin, onAutoLogin } from "./events";
-import { DEFAULT_SETTINGS } from "./default";
+} from "./api.ts";
+import SettingsTab from "./settingsTab.ts";
+import { handleEditor, handlePlaylistsEditor, handleTemplateEditor } from "./ui.ts";
+import { onLogin, onAutoLogin } from "./events.ts";
+import { DEFAULT_SETTINGS } from "./default.ts";
 import {
 	getCurrentlyPlayingTrack,
 	getCurrentlyPlayingTrackAsString,
 	getRecentlyPlayedTracks,
-} from "./api";
+} from "./api.ts";
 import {
-	processAllPlaylists,
 	processCurrentlyPlayingTrack,
 	processRecentlyPlayedTracks,
-	processSinglePlaylist,
 	processTrackById,
-} from "./output";
-import { isPath } from "./utils";
+} from "./output.ts";
+import { processAllPlaylists, processSinglePlaylist } from "./playlist.ts";
+import { enabledItems, isPath } from "./utils.ts";
+import { parseAuthRedirect } from "./auth.ts";
 
 class TrackInputModal extends Modal {
 	private value = "";
@@ -86,6 +86,70 @@ class TrackInputModal extends Modal {
 	}
 }
 
+class LoginModal extends Modal {
+	private readonly loginUrl: string;
+	private readonly openedExternally: boolean;
+	private readonly onRedirect: (pasted: string) => Promise<void>;
+	onDismiss?: () => void;
+
+	constructor(
+		app: App,
+		loginUrl: string,
+		openedExternally: boolean,
+		onRedirect: (pasted: string) => Promise<void>,
+	) {
+		super(app);
+		this.loginUrl = loginUrl;
+		this.openedExternally = openedExternally;
+		this.onRedirect = onRedirect;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl("h3", { text: "Connect to Spotify" });
+		contentEl.createEl("p", {
+			text: this.openedExternally
+				? "Spotify should have opened in your default browser. Approve the access, and you will be sent back to Obsidian."
+				: "Could not open your browser automatically. Copy the link below and open it manually.",
+		});
+		contentEl.createEl("p", {
+			text:
+				"If the Spotify page opened inside Obsidian, copy this link into your browser, the in-app viewer cannot complete the redirect.",
+			cls: "mod-warning",
+		});
+
+		new Setting(contentEl).setName("Login link").addButton((btn) =>
+			btn.setButtonText("Copy link").onClick(async () => {
+				await navigator.clipboard.writeText(this.loginUrl);
+				btn.setButtonText("Copied!");
+			}),
+		);
+
+		let pasted = "";
+		new Setting(contentEl)
+			.setName("Stuck? Paste the redirect URL")
+			.setDesc(
+				"Copy the obsidian://spotify-auth/... URL your browser was sent to and paste it here to finish connecting.",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("obsidian://spotify-auth/?code=...&state=...")
+					.onChange((value) => { pasted = value; }),
+			)
+			.addButton((btn) =>
+				btn.setButtonText("Connect").setCta().onClick(async () => {
+					this.close();
+					await this.onRedirect(pasted);
+				}),
+			);
+	}
+
+	onClose() {
+		this.contentEl.empty();
+		this.onDismiss?.();
+	}
+}
+
 export default class SpotifyLinkPlugin extends Plugin {
 	settings!: SpotifyLinkSettings;
 
@@ -93,6 +157,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 	spotifyConnected = false;
 	spotifyUrl = "";
 	statusBar!: HTMLElement;
+	private loginModal: LoginModal | null = null;
 
 	async loadOrGetTemplate(input: string): Promise<string> {
 		try {
@@ -123,6 +188,79 @@ export default class SpotifyLinkPlugin extends Plugin {
 			console.error("Spotify Link Plugin:", e);
 			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
 			return "";
+		}
+	}
+
+	// Nothing should fail silently: every command goes through here.
+	async run(action: () => Promise<void>): Promise<void> {
+		try {
+			await action();
+		} catch (e) {
+			console.error("Spotify Link Plugin:", e);
+			new Notice(
+				"[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)),
+				15000,
+			);
+		}
+	}
+
+	startLogin() {
+		if (!this.settings.spotifyClientId || !this.settings.spotifyClientSecret) {
+			new Notice(
+				"Spotify Link: Add your Client ID and Client Secret in the plugin settings first.",
+				10000,
+			);
+			return;
+		}
+
+		const { url, opened } = onLogin(
+			this.settings.spotifyClientId,
+			this.settings.spotifyState,
+			this.settings.spotifyScopes,
+		);
+
+		const modal = new LoginModal(this.app, url, opened, async (pasted) => {
+			const redirect = parseAuthRedirect(pasted);
+			if (!redirect.code && !redirect.error) {
+				new Notice(
+					"Spotify Link: No authorization code found in that URL. Paste the full obsidian://spotify-auth/... link.",
+					10000,
+				);
+				return;
+			}
+			await this.completeAuth(redirect as SpotifyAuthCallback);
+		});
+		modal.onDismiss = () => {
+			if (this.loginModal === modal) this.loginModal = null;
+		};
+
+		this.loginModal = modal;
+		modal.open();
+	}
+
+	async completeAuth(params: SpotifyAuthCallback) {
+		try {
+			this.spotifyConnected = await handleCallback(
+				params,
+				this.settings.spotifyClientId,
+				this.settings.spotifyClientSecret,
+				this.settings.spotifyState,
+			);
+			this.loginModal?.close();
+			new Notice("Spotify Link Plugin: Connected to Spotify !", 3000);
+			this.spotifyUrl = await getSpotifyUrl(
+				this.settings.spotifyClientId,
+				this.settings.spotifyClientSecret,
+			);
+		} catch (e) {
+			console.error("Spotify Link Plugin:", e);
+			new Notice(
+				"[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)),
+				10000,
+			);
+			this.spotifyConnected = false;
+		} finally {
+			this.updateStatusBar();
 		}
 	}
 
@@ -160,13 +298,21 @@ export default class SpotifyLinkPlugin extends Plugin {
 		}
 	}
 
+	// Creates missing parents; vault root and existing folders are no-ops.
 	async createFolder(vault: Vault, folder: string) {
-		try {
-			await vault.createFolder(folder);
-		} catch (e) {
-			if ((e instanceof Error ? e.message : String(e)) !== "Folder already exists.") {
-				console.error("Spotify Link Plugin:", e);
-			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+		if (!folder || folder === "/") return;
+
+		let current = "";
+		for (const segment of folder.split("/").filter(Boolean)) {
+			current = current ? `${current}/${segment}` : segment;
+			if (vault.getAbstractFileByPath(current)) continue;
+			try {
+				await vault.createFolder(current);
+			} catch (e) {
+				const message = e instanceof Error ? e.message : String(e);
+				if (!message.includes("already exists")) {
+					throw new Error(`Could not create folder "${current}": ${message}`);
+				}
 			}
 		}
 	}
@@ -273,8 +419,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		const template = await this.loadOrGetTemplate(
 			this.settings.templates[3],
 		);
-		const dest = this.settings.playlistDestination || "";
-		const folder = normalizePath(`/${dest}`);
+		const folder = normalizePath(this.settings.playlistDestination || "/");
 		await this.createFolder(this.app.vault, folder);
 
 		let created = 0;
@@ -355,7 +500,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			const template = await this.loadOrGetTemplate(
 				this.settings.templates[3],
 			);
-			const folder = normalizePath(`/${this.settings.playlistDestination ?? ""}`);
+			const folder = normalizePath(this.settings.playlistDestination || "/");
 			let regenerated = 0;
 
 			for (const playlist of matchingPlaylists) {
@@ -497,7 +642,13 @@ export default class SpotifyLinkPlugin extends Plugin {
 			cachedPlaylistNames = result.playlistNames;
 		}
 
-		if (!content) return;
+		if (!content.trim()) {
+			new Notice(
+				"Spotify Link: Nothing to write — the template rendered empty. Check the template in the plugin settings.",
+				10000,
+			);
+			return;
+		}
 
 		const filename = `${normalizePath(
 			`/${parent}/${await this.getName(trackForName ?? track)}`,
@@ -546,13 +697,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			"spotify",
 			'<path fill="currentColor" d="M 52.021502,2.019 C 24.520376,2.019 2.019,24.520376 2.019,52.021502 2.019,79.517624 24.520376,102.019 52.021502,102.019 79.517624,102.019 102.019,79.517624 102.019,52.021502 102.019,24.520376 79.767861,2.019 52.021502,2.019 Z m 22.996847,72.248636 c -0.995946,1.496422 -2.74761,2.001902 -4.254041,1.005956 -11.756168,-7.256894 -26.50518,-8.758321 -44.006806,-4.759522 -1.741655,0.510485 -3.243081,-0.740703 -3.743557,-2.247134 -0.50548,-1.751665 0.745709,-3.243081 2.25214,-3.748562 18.993043,-4.254041 35.498724,-2.497372 48.496071,5.50523 1.751664,0.745709 2.001902,2.742606 1.256193,4.244032 z m 6.005706,-13.74806 c -1.256194,1.746659 -3.503328,2.497372 -5.259997,1.246183 -13.497823,-8.237826 -33.992293,-10.750212 -49.742255,-5.745458 -1.991893,0.50548 -4.254042,-0.500475 -4.749512,-2.492368 -0.505481,-2.011911 0.500475,-4.26405 2.497372,-4.764526 18.247335,-5.49522 40.753716,-2.742605 56.248436,6.761424 1.501426,0.745708 2.25214,3.24308 1.005956,4.994745 z m 0.49547,-14.008308 C 65.519325,37.017248 38.768912,36.016297 23.514421,40.775819 a 4.6944597,4.6944597 0 0 1 -5.745459,-3.002853 4.689455,4.689455 0 0 1 2.997848,-5.760472 c 17.751865,-5.249988 47.004655,-4.254042 65.507232,6.761423 2.247135,1.246184 2.997848,4.249037 1.74666,6.496172 -1.251189,1.751664 -4.249037,2.492367 -6.501177,1.241179 z" style="stroke-width:5.00475" />',
 		);
-		this.addRibbonIcon("spotify", "Connect Spotify", () => {
-			onLogin(
-				this.settings.spotifyClientId,
-				this.settings.spotifyState,
-				this.settings.spotifyScopes,
-			);
-		});
+		this.addRibbonIcon("spotify", "Connect Spotify", () => this.startLogin());
 
 		//
 		// STATUS BAR
@@ -567,33 +712,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 		//
 		this.registerObsidianProtocolHandler(
 			"spotify-auth",
-			async (params) => {
-				try {
-					this.spotifyConnected = await handleCallback(
-						params as unknown as SpotifyAuthCallback,
-						this.settings.spotifyClientId,
-						this.settings.spotifyClientSecret,
-						this.settings.spotifyState,
-					);
-					new Notice(
-						"Spotify Link Plugin: Connected to Spotify !",
-						3000,
-					);
-					this.spotifyUrl = await getSpotifyUrl(
-						this.settings.spotifyClientId,
-						this.settings.spotifyClientSecret,
-					);
-				} catch (e) {
-					console.error("Spotify Link Plugin:", e);
-					new Notice(
-						"[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)),
-						3000,
-					);
-					this.spotifyConnected = false;
-				} finally {
-					this.updateStatusBar();
-				}
-			},
+			async (params) =>
+				await this.completeAuth(params as unknown as SpotifyAuthCallback),
 		);
 
 		//
@@ -606,7 +726,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 			this.addCommand({
 				id,
 				name,
-				callback: async () => { await this.createFile(dest(), id); },
+				callback: () => this.run(() => this.createFile(dest(), id)),
 			});
 		};
 
@@ -614,8 +734,8 @@ export default class SpotifyLinkPlugin extends Plugin {
 			this.addCommand({
 				id,
 				name,
-				callback: async () => { await this.createFile(dest(), id); },
-				editorCallback: async (_editor: Editor) => { await this.createFile(dest(), id); },
+				callback: () => this.run(() => this.createFile(dest(), id)),
+				editorCallback: () => this.run(() => this.createFile(dest(), id)),
 			});
 		};
 
@@ -631,7 +751,7 @@ export default class SpotifyLinkPlugin extends Plugin {
 		this.addCommand({
 			id: "append-currently-playing-episode-using-template",
 			name: "Append Spotify currently playing episode using template",
-			editorCallback: async (editor: Editor) => {
+			editorCallback: (editor: Editor) => this.run(async () => {
 				await handleTemplateEditor(
 					editor,
 					await this.loadOrGetTemplate(this.settings.templates[1]),
@@ -639,21 +759,21 @@ export default class SpotifyLinkPlugin extends Plugin {
 					this.settings.spotifyClientSecret,
 					this.settings,
 				);
-			},
+			}),
 		});
 		this.addCommand({
 			id: "append-currently-playing-episode",
 			name: "Append Spotify currently playing episode with timestamp",
-			editorCallback: async (editor: Editor) => {
+			editorCallback: (editor: Editor) => this.run(async () => {
 				await handleEditor(editor, this.settings.spotifyClientId, this.settings.spotifyClientSecret);
-			},
+			}),
 		});
 
 		// Track
 		this.addCommand({
 			id: "append-currently-playing-track-using-template",
 			name: "Append Spotify currently playing track using template",
-			editorCallback: async (editor: Editor) => {
+			editorCallback: (editor: Editor) => this.run(async () => {
 				const result = await handleTemplateEditor(
 					editor,
 					await this.loadOrGetTemplate(this.settings.templates[0]),
@@ -662,39 +782,34 @@ export default class SpotifyLinkPlugin extends Plugin {
 					this.settings,
 				);
 				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId, result.playlistNames);
-			},
+			}),
 		});
 		this.addCommand({
 			id: "append-currently-playing-track",
 			name: "Append Spotify currently playing track with timestamp",
-			editorCallback: async (editor: Editor) => {
+			editorCallback: (editor: Editor) => this.run(async () => {
 				const result = await handleEditor(editor, this.settings.spotifyClientId, this.settings.spotifyClientSecret);
 				if (result.trackId) await this.regeneratePlaylistNotes(result.trackId);
-			},
+			}),
 		});
 		this.addCommand({
 			id: "append-track-by-id-using-template",
 			name: "Append track by Spotify ID or URL using template",
-			editorCallback: async (editor: Editor) => {
-				new TrackInputModal(this.app, async (trackIdOrUrl) => {
+			editorCallback: (editor: Editor) => {
+				new TrackInputModal(this.app, (trackIdOrUrl) => this.run(async () => {
 					if (!trackIdOrUrl) return;
-					try {
-						const result = await processTrackById(
-							this.settings.spotifyClientId,
-							this.settings.spotifyClientSecret,
-							trackIdOrUrl,
-							await this.loadOrGetTemplate(this.settings.templates[0]),
-							this.settings,
-						);
-						editor.replaceSelection(`${result.content}\n\n`);
-						if (result.playlistNames.length > 0) {
-							await this.regeneratePlaylistNotes(trackIdOrUrl, result.playlistNames);
-						}
-					} catch (e) {
-						console.error("Spotify Link Plugin:", e);
-			new Notice("[ERROR] Spotify Link Plugin: " + (e instanceof Error ? e.message : String(e)), 10000);
+					const result = await processTrackById(
+						this.settings.spotifyClientId,
+						this.settings.spotifyClientSecret,
+						trackIdOrUrl,
+						await this.loadOrGetTemplate(this.settings.templates[0]),
+						this.settings,
+					);
+					editor.replaceSelection(`${result.content}\n\n`);
+					if (result.playlistNames.length > 0) {
+						await this.regeneratePlaylistNotes(trackIdOrUrl, result.playlistNames);
 					}
-				}).open();
+				})).open();
 			},
 		});
 
@@ -708,38 +823,33 @@ export default class SpotifyLinkPlugin extends Plugin {
 		this.addCommand({
 			id: "refresh-session",
 			name: "Refresh session",
-			callback: async () => {
-				try {
-					await requestRefreshToken(this.settings.spotifyClientId, this.settings.spotifyClientSecret);
-					new Notice(`Spotify Link Plugin: Access Refreshed`);
-				} catch (e) {
-					console.error("Spotify Link Plugin:", e);
-					new Notice(`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`);
-				}
-			},
+			callback: () => this.run(async () => {
+				await requestRefreshToken(this.settings.spotifyClientId, this.settings.spotifyClientSecret);
+				new Notice(`Spotify Link Plugin: Access Refreshed`);
+			}),
 		});
 
 		// Playlists
 		this.addCommand({
 			id: "create-file-for-all-playlists-using-template",
 			name: "Create file for all playlists using template",
-			callback: async () => {
+			callback: () => this.run(async () => {
 				if (!playlistGuard()) return;
 				await this.createFile(dest(), "create-file-for-all-playlists-using-template");
-			},
+			}),
 		});
 		this.addCommand({
 			id: "create-individual-playlist-files-using-template",
 			name: "Create individual files for all playlists using template",
-			callback: async () => {
+			callback: () => this.run(async () => {
 				if (!playlistGuard()) return;
 				await this.createPlaylistFiles();
-			},
+			}),
 		});
 		this.addCommand({
 			id: "append-all-playlists-using-template",
 			name: "Append all playlists using template",
-			editorCallback: async (editor: Editor) => {
+			editorCallback: (editor: Editor) => this.run(async () => {
 				if (!playlistGuard()) return;
 				await handlePlaylistsEditor(
 					editor,
@@ -748,17 +858,24 @@ export default class SpotifyLinkPlugin extends Plugin {
 					this.settings.spotifyClientSecret,
 					this.settings,
 				);
-			},
+			}),
 		});
 
 		//
 		// Create new page and fill content
 		//
-		if (this.settings?.menu) {
-			for (const customMenu of this.settings.menu) {
-				if (!customMenu.enabled) return;
-				const menuCreateFile = (menu: Menu, file: TAbstractFile) => {
-					const parent = file instanceof TFolder ? file.path : (file.parent?.path ?? "");
+		if (!this.settings?.menu) {
+			new Notice("Your spotify link configuration might be outdated.");
+		}
+
+		// Single handler, read at menu-open time so toggles apply without a reload.
+		this.registerEvent(
+			this.app.workspace.on("file-menu", (menu: Menu, file: TAbstractFile) => {
+				const parent = file instanceof TFolder
+					? file.path
+					: (file.parent?.path ?? "");
+
+				for (const customMenu of enabledItems(this.settings.menu)) {
 					menu.addItem((item: MenuItem) => {
 						item.setTitle(customMenu.name).onClick(async () => {
 							try {
@@ -768,18 +885,12 @@ export default class SpotifyLinkPlugin extends Plugin {
 								new Notice(
 									`[ERROR] Spotify Link Plugin: ${(e instanceof Error ? e.message : String(e))}`,
 								);
-								return false;
 							}
 						});
 					});
-				};
-				this.registerEvent(
-					(this.app.workspace as any).on("file-menu", menuCreateFile),
-				);
-			}
-		} else {
-			new Notice("Your spotify link configuration might be outdated.");
-		}
+				}
+			}),
+		);
 
 		//
 		// Events

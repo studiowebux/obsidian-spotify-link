@@ -1,210 +1,113 @@
-const inputs = [
-  "{{ timestamp }}",
-  "{{ timestamp(YYYY-MM-DD) }}",
-  "{{ timestamp(YYYY-MM-DD HH:mm) }}",
-  "{{ timestamp(HH:mm) }}",
-  "{{ timestampz }}",
-  "{{ timestampz(YYYY-MM-DD) }}",
-  "{{ timestampz(YYYY-MM-DD HH:mm) }}",
-  "{{ timestampz(HH:mm) }}",
-];
+const test = require("node:test");
+const assert = require("node:assert/strict");
 
-const input = [
-  "{{ timestamp }}",
-  "{{ timestamp(YYYY-MM-DD) }}",
-  "{{ timestamp(YYYY-MM-DD HH:mm) }}",
-  "{{ timestamp(HH:mm) }}",
-  "{{ timestampz }}",
-  "{{ timestampz(YYYY-MM-DD) }}",
-  "{{ timestampz(YYYY-MM-DD HH:mm) }}",
-  "{{ timestampz(HH:mm) }}",
-].join("\n");
+const { getTrackMessage } = require("../src/track.ts");
+const { getEpisodeMessage } = require("../src/episode.ts");
+const { padZero } = require("../src/utils.ts");
 
-function padZero(date) {
-  return ("0" + date).slice(-2);
-}
+const TRACK = {
+	name: "Midnight",
+	artists: [{ name: "Artist A", href: "https://api.spotify.com/artists/a" }],
+	external_urls: { spotify: "https://open.spotify.com/track/1" },
+	album: {
+		name: "Dreams",
+		release_date: "2024-03-15",
+		images: [],
+		external_urls: { spotify: "https://open.spotify.com/album/1" },
+	},
+};
 
-for (const i of inputs) {
-  i.replace(
-    /{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
-    (_match, ...options) => {
-      const matches = options
-        .slice(0, options.length - 2)
-        .filter((m) => m !== undefined);
+const EPISODE_DATA = {
+	progress_ms: 1000,
+	item: {
+		type: "episode",
+		name: "Ep 1",
+		description: "d",
+		duration_ms: 2000,
+		release_date: "2024-03-15",
+		audio_preview_url: null,
+		images: [],
+		external_urls: { spotify: "https://open.spotify.com/episode/1" },
+		show: {
+			name: "Show",
+			publisher: "P",
+			description: "d",
+			external_urls: { spotify: "" },
+			total_episodes: 1,
+		},
+	},
+};
 
-      // console.log(matches);
+const render = (template) => getTrackMessage(TRACK, [], template, []);
 
-      let timestamp = "";
-      const hasYearMonthDate = matches.includes("YYYY-MM-DD");
-      const hasHourMinutes =
-        matches.includes(" HH:mm") || matches.includes("HH:mm");
-      if (matches.includes("z")) {
-        if (hasYearMonthDate) {
-          timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
-        }
-        if (hasHourMinutes) {
-          if (timestamp.length > 0) {
-            timestamp += " ";
-          }
-          timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
-        }
+const now = new Date();
+const localDate = `${now.getFullYear()}-${padZero(now.getMonth() + 1)}-${padZero(now.getDate())}`;
+const utcDate = `${now.getUTCFullYear()}-${padZero(now.getUTCMonth() + 1)}-${padZero(now.getUTCDate())}`;
 
-        if (matches.length === 1) {
-          timestamp = `${new Date().toISOString()}`;
-        }
-      } else {
-        if (hasYearMonthDate) {
-          timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
-        }
-        if (hasHourMinutes) {
-          if (timestamp.length > 0) {
-            timestamp += " ";
-          }
-          timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
-        }
+test("{{ timestamp(YYYY-MM-DD) }} renders the local date", () => {
+	assert.equal(render("{{ timestamp(YYYY-MM-DD) }}"), localDate);
+});
 
-        if (matches.length === 1) {
-          timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
-        }
-      }
+test("{{ timestampz(YYYY-MM-DD) }} renders the UTC date", () => {
+	assert.equal(render("{{ timestampz(YYYY-MM-DD) }}"), utcDate);
+});
 
-      console.log(i, ":", timestamp);
-      return timestamp;
-    },
-  );
-}
+test("{{ timestamp(HH:mm) }} renders zero-padded time only", () => {
+	assert.match(render("{{ timestamp(HH:mm) }}"), /^\d{2}:\d{2}$/);
+	assert.match(render("{{ timestampz(HH:mm) }}"), /^\d{2}:\d{2}$/);
+});
 
-const output = input.replace(
-  /{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
-  (_match, ...options) => {
-    console.debug(_match, options);
-    const matches = options
-      .slice(0, options.length - 2)
-      .filter((m) => m !== undefined);
+test("{{ timestamp(YYYY-MM-DD HH:mm) }} renders date and time", () => {
+	assert.match(render("{{ timestamp(YYYY-MM-DD HH:mm) }}"), /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/);
+	assert.equal(render("{{ timestamp(YYYY-MM-DD HH:mm) }}").startsWith(localDate), true);
+});
 
-    // console.log(matches);
+test("{{ timestampz }} renders an ISO-8601 instant", () => {
+	const result = render("{{ timestampz }}");
+	assert.match(result, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+	assert.equal(Number.isNaN(Date.parse(result)), false);
+});
 
-    let timestamp = "";
-    const hasYearMonthDate = matches.includes("YYYY-MM-DD");
-    const hasHourMinutes =
-      matches.includes(" HH:mm") || matches.includes("HH:mm");
-    if (matches.includes("z")) {
-      if (hasYearMonthDate) {
-        timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
-      }
-      if (hasHourMinutes) {
-        if (timestamp.length > 0) {
-          timestamp += " ";
-        }
-        timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
-      }
+test("{{ timestamp }} renders a human-readable local date and time", () => {
+	const result = render("{{ timestamp }}");
+	assert.equal(result.includes(" - "), true);
+	assert.equal(result.includes(String(now.getFullYear())), true);
+});
 
-      if (matches.length === 1) {
-        timestamp = `${new Date().toISOString()}`;
-      }
-    } else {
-      if (hasYearMonthDate) {
-        timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
-      }
-      if (hasHourMinutes) {
-        if (timestamp.length > 0) {
-          timestamp += " ";
-        }
-        timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
-      }
+// Regression: the no-space alternative required a trailing space, so
+// {{timestamp}} was left unreplaced in the note.
+test("no-space variants are replaced too", () => {
+	for (const [spaced, tight] of [
+		["{{ timestamp(YYYY-MM-DD) }}", "{{timestamp(YYYY-MM-DD)}}"],
+		["{{ timestampz(YYYY-MM-DD) }}", "{{timestampz(YYYY-MM-DD)}}"],
+		["{{ timestamp(HH:mm) }}", "{{timestamp(HH:mm)}}"],
+	]) {
+		assert.equal(render(tight), render(spaced), `${tight} should match ${spaced}`);
+	}
 
-      if (matches.length === 1) {
-        timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
-      }
-    }
+	for (const tight of ["{{timestamp}}", "{{timestampz}}"]) {
+		assert.equal(render(tight).includes("{{"), false, `${tight} left unreplaced`);
+	}
+});
 
-    console.log("Input:", timestamp);
-    return timestamp;
-  },
-);
+test("timestamps resolve everywhere in a multi-line template", () => {
+	const template = [
+		"a {{ timestamp }}",
+		"b {{ timestampz }}",
+		"c {{ timestamp(HH:mm) }}",
+		"d {{timestamp(YYYY-MM-DD)}}",
+		"e {{ timestampz(YYYY-MM-DD HH:mm) }}",
+	].join("\n");
+	assert.equal(render(template).match(/\{\{.*?\}\}/g), null);
+});
 
-console.log("output", output);
-
-const template = `
-Template **Song Name:** {{ song_name }}
-**Song URL:** {{ song_link }}
-**Album Name:** {{ album }}
-**Album Release Date:** {{ album_release }}
-**Album URL:** {{ album_link }}
-**Cover:** {{ album_cover_medium }}
-**Cover URL:** {{ album_cover_link_medium }}
-**Artists:** {{ artists }}
-**Added at:** *{{ timestamp }}*
-
-**Timestamp tests:**
-
-timestamp : {{ timestamp }}
-timestampz : {{ timestampz }}
-timestamp(HH:mm) : {{ timestamp(HH:mm) }}
-timestampz(HH:mm) : {{ timestampz(HH:mm) }}
-timestamp(YYYY-MM-DD) : {{ timestamp(YYYY-MM-DD) }}
-timestampz(YYYY-MM-DD) : {{ timestampz(YYYY-MM-DD) }}
-timestamp(YYYY-MM-DD HH:mm) : {{ timestamp(YYYY-MM-DD HH:mm) }}
-timestampz(YYYY-MM-DD HH:mm) : {{ timestampz(YYYY-MM-DD HH:mm) }}
-
-Genres Tests:
-
-Genres: {{ genres }}
-Genres Array: {{ genres_array }}
-Genres hashatg: {{ genres_hashtag }}
-
-Artists values:
-
-artist_name: {{ artist_name }}
-Popularity: {{ popularity }}
-Followers: {{ followers }}
-Artist images: {{ artist_image }}`.replace(
-  /{{ timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}|{{timestamp(z?)(\(((YYYY-MM-DD)?( ?HH:mm)?)\))? }}/g,
-  (_match, ...options) => {
-    console.debug(_match, options);
-    const matches = options
-      .slice(0, options.length - 2)
-      .filter((m) => m !== undefined);
-
-    // console.log(matches);
-
-    let timestamp = "";
-    const hasYearMonthDate = matches.includes("YYYY-MM-DD");
-    const hasHourMinutes =
-      matches.includes(" HH:mm") || matches.includes("HH:mm");
-    if (matches.includes("z")) {
-      if (hasYearMonthDate) {
-        timestamp += `${new Date().getUTCFullYear()}-${padZero(new Date().getUTCMonth() + 1)}-${padZero(new Date().getUTCDate())}`;
-      }
-      if (hasHourMinutes) {
-        if (timestamp.length > 0) {
-          timestamp += " ";
-        }
-        timestamp += `${padZero(new Date().getUTCHours())}:${padZero(new Date().getUTCMinutes())}`;
-      }
-
-      if (matches.length === 1) {
-        timestamp = `${new Date().toISOString()}`;
-      }
-    } else {
-      if (hasYearMonthDate) {
-        timestamp += `${new Date().getFullYear()}-${padZero(new Date().getMonth() + 1)}-${padZero(new Date().getDate())}`;
-      }
-      if (hasHourMinutes) {
-        if (timestamp.length > 0) {
-          timestamp += " ";
-        }
-        timestamp += `${padZero(new Date().getHours())}:${padZero(new Date().getMinutes())}`;
-      }
-
-      if (matches.length === 1) {
-        timestamp = `${new Date().toDateString()} - ${new Date().toLocaleTimeString()}`;
-      }
-    }
-
-    console.log("Input:", timestamp);
-    return timestamp;
-  },
-);
-
-console.log("template", template);
+test("episodes format timestamps the same way", () => {
+	assert.equal(
+		getEpisodeMessage(EPISODE_DATA, "{{ timestamp(YYYY-MM-DD) }}"),
+		localDate,
+	);
+	assert.equal(
+		getEpisodeMessage(EPISODE_DATA, "{{timestamp(YYYY-MM-DD)}}"),
+		localDate,
+	);
+});

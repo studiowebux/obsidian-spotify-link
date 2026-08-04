@@ -1,4 +1,5 @@
-import { getMe, generateLoginUrl, REDIRECT_URI } from "./api";
+import { getMe, generateLoginUrl, REDIRECT_URI } from "./api.ts";
+import { openExternal } from "./platform.ts";
 
 export async function onAutoLogin(
   clientId: string,
@@ -10,6 +11,11 @@ export async function onAutoLogin(
     : { success: false, spotifyUrl: "" };
 }
 
-export function onLogin(clientId: string, state: string, scope: string): void {
-  window.open(generateLoginUrl(clientId, state, scope, REDIRECT_URI));
+export function onLogin(
+  clientId: string,
+  state: string,
+  scope: string,
+): { url: string; opened: boolean } {
+  const url = generateLoginUrl(clientId, state, scope, REDIRECT_URI);
+  return { url, opened: openExternal(url) };
 }

@@ -71,8 +71,7 @@ Templates can be:
 See [Templates → Variables](templates.md#variables) for the full token reference, including:
 - `{{ genres }}`, `{{ genres_array }}`, `{{ genres_hashtag }}` — artist genres (deduplicated)
 - `{{ genres_by_artist }}` / `{{ genres_by_artist:SEP }}` — per-artist genre breakdown with optional separator override
-- `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}` — album-level genres (fetched on demand)
-- `{{ album_popularity }}`, `{{ track_popularity }}` — popularity scores
+- `{{ album_genres }}`, `{{ album_popularity }}`, `{{ track_popularity }}`, `{{ popularity }}`, `{{ followers }}` — deprecated, render `_deprecated_` (see [Deprecated variables](templates.md#deprecated-variables))
 
 Path resolution attempts:
 
@@ -141,7 +140,7 @@ Path resolution attempts:
 
 ### Context Menu
 
-Each item can be toggled on or off in **Plugin Settings → Context Menu**. Changes take effect after reloading the plugin.
+Each item can be toggled on or off in **Plugin Settings → Context Menu**. Changes take effect immediately.
 
 Right-clicking a **file** creates the new note in that file's parent folder. Right-clicking a **folder** creates it inside that folder.
 
@@ -162,10 +161,23 @@ New items added in future versions are automatically merged into existing settin
 
 1. Configure Client ID and Secret
 2. Click Spotify icon in left ribbon
-3. Browser opens OAuth flow
+3. Your system browser opens the Spotify consent page
 4. Grant permissions
 5. Redirect back to Obsidian
 6. Status bar updates to "Spotify Connected"
+
+### Known issue: the Web viewer core plugin
+
+**Symptom:** you click the Spotify ribbon icon and the consent page opens *inside* Obsidian in a tab. You approve access and nothing happens — the status bar still says "Spotify not Connected".
+
+**Why:** Obsidian's **Web viewer** core plugin intercepts `window.open` so external links open in an in-app tab instead of your browser. That in-app view cannot follow the `obsidian://spotify-auth/` redirect that hands the authorization code back to the plugin, so the flow dead-ends.
+
+**What the plugin does about it:** the login now goes through Electron's `shell.openExternal`, which hands the URL to your operating system and bypasses the interception. If that is unavailable (mobile, unusual setups), the login dialog gives you two fallbacks:
+
+- **Copy link** — paste it into a real browser yourself.
+- **Paste the redirect URL** — after approving in the browser, copy the `obsidian://spotify-auth/?code=...&state=...` URL it was sent to and paste it into the dialog to finish connecting.
+
+You do not need to disable Web viewer.
 
 ## Token Management
 
@@ -206,24 +218,45 @@ Token persistence across Obsidian restarts via localStorage.
 
 **Clear Spotify session**
 - Removes `access_token`, `refresh_token`, and `expires_in` from localStorage
-- Use this to force a full re-authentication (e.g. after changing scopes, or when troubleshooting token issues)
+- The first step of [Start from a clean slate](#start-from-a-clean-slate) — use it after changing scopes or whenever the connection state looks wrong
 - After clearing, click the Spotify ribbon icon to re-authenticate
+
+## Start from a clean slate
+
+When the plugin misbehaves in a way you cannot explain, reset it in this order. Each step throws away more state, so stop as soon as it works.
+
+1. **Clear Spotify session** (Settings → Reset). Removes `access_token`, `refresh_token` and `expires_in` from local storage. This fixes anything caused by a stale or partially-written token — including tokens issued before you changed your scopes.
+2. **Reload the plugin** (Settings → Community plugins → toggle off/on). Re-runs the startup auto-login with the cleared state.
+3. **Click the Spotify ribbon icon** and authenticate again. This is required after step 1 — clearing the session logs you out on purpose.
+4. **Re-check the Spotify app settings** if it still fails: the Redirect URI must be exactly `obsidian://spotify-auth/`, and the Client ID/Secret must match the app you are looking at.
+5. **Full reset.** Quit Obsidian, delete `.obsidian/plugins/spotify-link/data.json` in your vault, restart. This discards every setting including your templates, so copy anything you want to keep first.
+
+Why the split: your credentials and templates live in `data.json`, but your session tokens live in the browser's local storage. Clearing one does not clear the other, which is why "it still says not connected" can survive a settings change.
 
 ## Troubleshooting
 
-**Connection fails**
-- Verify Client ID/Secret
-- Check Redirect URI matches exactly
-- Ensure scopes are correct
+Errors are surfaced as notices and logged in full to the developer console (`Ctrl+Shift+I` / `Cmd+Option+I`), prefixed with `Spotify Link Plugin:`. Every message names the call that failed, e.g. `[getAllPlaylists]`.
 
-**Token expired**
-- Use "Refresh session" command
-- Or use "Clear Spotify session" in settings for a full reset
+| What you see | What it means | What to do |
+|---|---|---|
+| *Add your Client ID and Client Secret…* | The ribbon was clicked before credentials were saved | Fill both fields in settings |
+| *Your Spotify session is no longer valid* (401) | Token expired or was revoked | Click the ribbon icon to reconnect, or run *Clear Spotify session* |
+| *Spotify refused this request (403)* | Missing scope, or your app lost access | The message names the scope — add it to *Spotify Scopes* and re-authenticate. Also check the Premium requirement below |
+| *Not found (404)* | The item does not exist, or the endpoint was removed | Verify the track/episode URL; if it is a plugin call, report it |
+| *Spotify rate limit reached (429)* | Too many calls too quickly | Wait the reported delay; lower *Playlist concurrency*; disable *Auto-regenerate playlist notes* |
+| *Nothing is currently playing* | Spotify returned 204 — playback is stopped | Start playback and retry |
+| *Could not reach Spotify* | No network, or requests are blocked | Check connectivity/VPN/firewall |
+| *Spotify is having trouble* (5xx) | Outage on Spotify's side | Retry later |
 
-**429 Too Many Requests**
-- Spotify rate-limits API calls — there is nothing the plugin can do when this occurs
-- Reduce the number of requests: lower *Playlist concurrency*, disable *Auto-regenerate playlist notes*, avoid triggering multiple commands in quick succession
-- Wait a moment and try again
+### Development Mode apps require Premium
+
+Since February 2026, the app you created in the Spotify Developer Dashboard runs in Development Mode, and Spotify requires **the app owner to hold an active Spotify Premium subscription**. If the subscription lapses the app stops working and every call fails with 403 — no plugin setting can work around it. Access resumes when the subscription does.
+
+See the [February 2026 changelog](https://developer.spotify.com/documentation/web-api/references/changes/february-2026) and [migration guide](https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide).
+
+### Fields Spotify no longer returns
+
+Some template variables render `_deprecated_` because Spotify removed the underlying field, not because the plugin failed. See [Deprecated variables](templates.md#deprecated-variables) for the list and the reasoning.
 
 **Template not found**
 - Verify path relative to vault root

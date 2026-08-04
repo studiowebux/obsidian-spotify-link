@@ -8,61 +8,11 @@
 // Helpers (mirrors src/utils.ts)
 // ---------------------------------------------------------------------------
 
-function formatSpotifyDate(date, format) {
-  if (!date || !format) return date;
-  const parts = date.split("-");
-  const year = parts[0] ?? "";
-  const month = parts[1] ?? "";
-  const day = parts[2] ?? "";
-  return format
-    .replace("YYYY", year)
-    .replace("MM", month)
-    .replace("DD", day);
-}
-
-// ---------------------------------------------------------------------------
-// Minimal template processor (mirrors the relevant parts of track.ts)
-// ---------------------------------------------------------------------------
+const { getTrackMessage } = require("../src/track.ts");
+const { formatSpotifyDate } = require("../src/utils.ts");
 
 function processTemplate(template, track, options = {}) {
-  const defaultImageSize = options.defaultImageSize ?? "";
-  const defaultReleaseDateFormat = options.defaultReleaseDateFormat ?? "";
-
-  return template
-    .replace(
-      /{{ album_release(\\?\|[^\s}]*)? }}|{{album_release}}/g,
-      (_match, fmtParam) => {
-        const fmt = fmtParam?.replace(/^\\?\|/, '') || defaultReleaseDateFormat;
-        return formatSpotifyDate(track.album.release_date, fmt);
-      },
-    )
-    .replace(
-      /{{ album_cover_large(\\?\|[^\s}]*)? }}|{{album_cover_large}}/g,
-      (_match, sizeParam) => {
-        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
-        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
-        const sizeStr = size ? `${sep}${size}` : "";
-        return `![${track.album.name}${sizeStr}](${track.album.images[0]?.url})`;
-      },
-    )
-    .replace(
-      /{{ album_cover_medium(\\?\|[^\s}]*)? }}|{{album_cover_medium}}/g,
-      (_match, sizeParam) => {
-        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
-        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
-        const sizeStr = size ? `${sep}${size}` : "";
-        return `![${track.album.name}${sizeStr}](${track.album.images[1]?.url})`;
-      },
-    )
-    .replace(
-      /{{ album_cover_small(\\?\|[^\s}]*)? }}|{{album_cover_small}}/g,
-      (_match, sizeParam) => {
-        const size = sizeParam?.replace(/^\\?\|/, '') || defaultImageSize;
-        const sep = sizeParam?.startsWith('\\|') ? '\\|' : '|';
-        const sizeStr = size ? `${sep}${size}` : "";
-        return `![${track.album.name}${sizeStr}](${track.album.images[2]?.url})`;
-      },
-    );
+  return getTrackMessage(track, [], template, [], options);
 }
 
 // ---------------------------------------------------------------------------
@@ -70,9 +20,13 @@ function processTemplate(template, track, options = {}) {
 // ---------------------------------------------------------------------------
 
 const TRACK = {
+  name: "Test Track",
+  artists: [{ name: "Test Artist", href: "https://api.spotify.com/artists/a" }],
+  external_urls: { spotify: "https://open.spotify.com/track/1" },
   album: {
     name: "Test Album",
     release_date: "2024-03-15",
+    external_urls: { spotify: "https://open.spotify.com/album/1" },
     images: [
       { url: "https://example.com/large.jpg" },
       { url: "https://example.com/medium.jpg" },

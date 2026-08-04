@@ -1,5 +1,5 @@
-import { CurrentlyPlayingTrack, Episode, TemplateOptions } from "./types";
-import { formatSpotifyDate, millisToMinutesAndSeconds, millisToSeconds, padZero } from "./utils";
+import type { CurrentlyPlayingTrack, Episode, TemplateOptions } from "./types.ts";
+import { DEPRECATED, formatSpotifyDate, millisToMinutesAndSeconds, millisToSeconds, padZero } from "./utils.ts";
 
 export function isEpisode(data: CurrentlyPlayingTrack) {
 	return data.item.type === "episode";
@@ -59,7 +59,9 @@ export function getEpisodeMessage(
 		)
 		.replace(
 			/{{ audio_preview_url }}|{{audio_preview_url}}/g,
-			`![Audio preview url](${episode.audio_preview_url})`,
+			episode.audio_preview_url
+				? `![Audio preview url](${episode.audio_preview_url})`
+				: DEPRECATED,
 		)
 		.replace(
 			/{{ episode_cover_large(\\?\|[^\s}]*)? }}|{{episode_cover_large}}/g,

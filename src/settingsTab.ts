@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import SpotifyLinkPlugin from "./main";
+import SpotifyLinkPlugin from "./main.ts";
 
 export default class SettingsTab extends PluginSettingTab {
 	plugin: SpotifyLinkPlugin;
@@ -34,6 +34,10 @@ export default class SettingsTab extends PluginSettingTab {
 		ol.createEl("li", {
 			text:
 				"Select the Spotify icon located in Obsidian's left sidebar to connect.",
+		});
+		div.createEl("p", {
+			text:
+				"Since February 2026 Spotify requires the owner of the app to have an active Spotify Premium subscription. Without it every request fails with a 403 error.",
 		});
 
 		const reconnectDiv = div.createDiv();
@@ -142,6 +146,10 @@ export default class SettingsTab extends PluginSettingTab {
 		const divDoc = containerEl.createDiv();
 
 		divDoc.createEl("h6", { text: "External resources" });
+		divDoc.createEl("p", {
+			text:
+				"Variables marked deprecated render the text '_deprecated_': Spotify stopped returning those fields for Development Mode apps in February 2026. Remove them from your templates when convenient.",
+		});
 		divDoc.createEl("p", { text: "Available variables (song):" });
 		divDoc
 			.createEl("ul")
@@ -170,14 +178,14 @@ export default class SettingsTab extends PluginSettingTab {
 			.createEl("li", { text: "{{ genres_hashtag }} — artist genres as hashtags" })
 			.createEl("li", { text: "{{ genres_by_artist }} — per-artist genres: 'Artist1: g1, g2 | Artist2: g3'" })
 			.createEl("li", { text: "{{ genres_by_artist:; }} — same with custom separator (e.g. ; instead of |)" })
-			.createEl("li", { text: "{{ album_genres }} — album genres, comma-separated (fetches extra API call)" })
-			.createEl("li", { text: "{{ album_genres_array }} — album genres as YAML/Dataview array" })
-			.createEl("li", { text: "{{ album_genres_hashtag }} — album genres as hashtags" })
-			.createEl("li", { text: "{{ followers }}" })
+			.createEl("li", { text: "{{ album_genres }} — deprecated, renders _deprecated_" })
+			.createEl("li", { text: "{{ album_genres_array }} — deprecated, renders _deprecated_" })
+			.createEl("li", { text: "{{ album_genres_hashtag }} — deprecated, renders _deprecated_" })
+			.createEl("li", { text: "{{ followers }} — deprecated, renders _deprecated_" })
 			.createEl("li", { text: "{{ artist_image }}" })
-			.createEl("li", { text: "{{ popularity }} — artist popularity (0–100)" })
-			.createEl("li", { text: "{{ track_popularity }} — track popularity (0–100)" })
-			.createEl("li", { text: "{{ album_popularity }} — album popularity (0–100, fetches extra API call)" })
+			.createEl("li", { text: "{{ popularity }} — deprecated, renders _deprecated_" })
+			.createEl("li", { text: "{{ track_popularity }} — deprecated, renders _deprecated_" })
+			.createEl("li", { text: "{{ album_popularity }} — deprecated, renders _deprecated_" })
 			.createEl("li", { text: "{{ artist_name }}" })
 			.createEl("li", { text: "{{ album_cover_url_large }}" })
 			.createEl("li", { text: "{{ album_cover_url_medium }}" })
@@ -446,7 +454,7 @@ export default class SettingsTab extends PluginSettingTab {
 
 		containerEl.createEl("h5", { text: "Context Menu" });
 		containerEl.createEl("p", {
-			text: "Toggle which items appear when right-clicking a file or folder. Changes take effect after reloading the plugin.",
+			text: "Toggle which items appear when right-clicking a file or folder.",
 		});
 		if (this.plugin.settings.menu) {
 			for (const menuItem of this.plugin.settings.menu) {
@@ -501,7 +509,7 @@ export default class SettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Clear Spotify session")
 			.setDesc(
-				"Removes the stored Spotify access token, refresh token, and expiration from local storage. Use this to force a full re-authentication.",
+				"Removes the stored Spotify access token, refresh token, and expiration from local storage. Start here when the plugin misbehaves: clear the session, reload the plugin, then click the Spotify ribbon icon to reconnect.",
 			)
 			.addButton((button) =>
 				button

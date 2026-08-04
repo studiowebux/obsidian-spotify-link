@@ -3,9 +3,10 @@ import {
   getAllPlaylists,
   getCurrentlyPlayingTrack,
   getCurrentlyPlayingTrackAsString,
-} from "./api";
-import { processAllPlaylists, processCurrentlyPlayingTrack } from "./output";
-import { TemplateOptions, Track, TrackCommandResult } from "./types";
+} from "./api.ts";
+import { processCurrentlyPlayingTrack } from "./output.ts";
+import { processAllPlaylists } from "./playlist.ts";
+import type { TemplateOptions, Track, TrackCommandResult } from "./types.ts";
 
 export async function handleEditor(
   editor: Editor,

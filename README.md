@@ -27,6 +27,13 @@
 
 ---
 
+## Known issues
+
+- **Obsidian's Web viewer core plugin breaks the Spotify login** if the consent page opens inside Obsidian. The plugin opens your system browser to work around it and offers a copy-link / paste-redirect fallback — see [Known issue](https://studiowebux.github.io/obsidian-spotify-link/configuration#known-issue-the-web-viewer-core-plugin).
+- **Spotify restricted Development Mode apps in February 2026.** The app you create must be owned by an account with an active Spotify Premium subscription, and some template variables now render `_deprecated_` because Spotify stopped returning them. See the [changelog](https://studiowebux.github.io/obsidian-spotify-link/changelog).
+
+---
+
 ## Installation and Usage
 
 [Full Documentation is available here](https://studiowebux.github.io/obsidian-spotify-link/)
