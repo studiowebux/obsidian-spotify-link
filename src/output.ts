@@ -1,4 +1,4 @@
-import { getArtist, getPlaylistsForTrack, getTrack } from "./api.ts";
+import { getAlbum, getArtist, getPlaylistsForTrack, getTrack } from "./api.ts";
 import { getEpisodeMessage, getEpisodeMessageTimestamp } from "./episode.ts";
 import {
 	getRecentlyPlayedTrackMessage,
@@ -6,8 +6,12 @@ import {
 	getTrackMessageTimestamp,
 	getTrackType,
 } from "./track.ts";
-import type { CurrentlyPlayingTrack, PlaylistDetail, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types.ts";
+import type { AlbumDetail, CurrentlyPlayingTrack, RecentlyPlayed, TemplateOptions, Track, TrackProcessingResult } from "./types.ts";
 
+
+function needsAlbum(template: string): boolean {
+	return /\{\{?\s*album_(popularity|genres[_a-z]*)\s*\}?\}/i.test(template);
+}
 
 export function processCurrentlyPlayingTrackInput(
 	data: CurrentlyPlayingTrack,
@@ -34,9 +38,12 @@ async function _processTrack(
 	template: string,
 	options?: TemplateOptions,
 ): Promise<TrackProcessingResult> {
-	const artists = await Promise.all(
-		track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id)),
-	);
+	const [artists, album] = await Promise.all([
+		Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
+		needsAlbum(template)
+			? getAlbum(clientId, clientSecret, track.album.id)
+			: Promise.resolve(undefined),
+	]);
 
 	const playlistsEnabled = options?.enablePlaylists !== false;
 	const needsPlaylists = playlistsEnabled && /\{\{?\s*playlists\s*\}?\}/i.test(template);
@@ -45,7 +52,7 @@ async function _processTrack(
 		: [];
 
 	return {
-		content: getTrackMessage(track, artists, template, playlistNames, options),
+		content: getTrackMessage(track, artists, template, playlistNames, options, album),
 		playlistNames,
 	};
 }
@@ -93,11 +100,14 @@ export async function processRecentlyPlayedTracks(
 	const messages: string[] = [];
 	for (const item of data.items) {
 		const track = item.track as Track;
-		const artists = await Promise.all(
-			track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id)),
-		);
+		const [artists, album] = await Promise.all([
+			Promise.all(track.artists.map((artist) => getArtist(clientId, clientSecret, artist.id))),
+			needsAlbum(resolved)
+				? getAlbum(clientId, clientSecret, track.album.id)
+				: Promise.resolve(undefined as AlbumDetail | undefined),
+		]);
 		messages.push(
-			getRecentlyPlayedTrackMessage(item, artists, resolved, options),
+			getRecentlyPlayedTrackMessage(item, artists, resolved, options, album),
 		);
 	}
 

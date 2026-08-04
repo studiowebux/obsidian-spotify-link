@@ -34,13 +34,13 @@ This restores `{{ playlists }}` and `{{ playlist_track_count }}`, which had been
 
 ### Deprecated
 
-The following render `_deprecated_` because Spotify no longer returns the underlying field. They are kept so existing templates do not start printing raw `{{ ... }}` text in notes, and will be removed in a future release:
+The following render `_deprecated_` when Spotify returns no value for them, which for most accounts is always. They are kept so existing templates do not start printing raw `{{ ... }}` text in notes, and will be removed in a future release:
 
 `{{ popularity }}`, `{{ followers }}`, `{{ track_popularity }}`, `{{ album_popularity }}`, `{{ album_genres }}`, `{{ album_genres_array }}`, `{{ album_genres_hashtag }}`, `{{ audio_preview_url }}`
 
 Artist genres (`{{ genres }}` and friends) still work, but Spotify only classifies some artists — an empty result is missing upstream data, not a plugin failure. See [Genres — best effort](templates.md#genres--best-effort).
 
-Fetching a track no longer makes an extra `/albums/{id}` request, since nothing consumed it.
+Where Spotify does still return a value it is rendered as before. The `/albums/{id}` request is still made only when a template uses one of the album variables.
 
 ### Note
 

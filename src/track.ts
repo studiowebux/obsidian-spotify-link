@@ -1,6 +1,10 @@
 import { DEPRECATED, formatSpotifyDate, millisToMinutesAndSeconds, orDeprecated, padZero } from "./utils.ts";
-import type { Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types.ts";
+import type { AlbumDetail, Artist, CurrentlyPlayingTrack, TemplateOptions, Track, TrackType } from "./types.ts";
 
+
+function albumGenres(album?: AlbumDetail): string[] {
+	return Array.from(new Set(album?.genres ?? []));
+}
 
 export function getTrackType(data: CurrentlyPlayingTrack): TrackType {
 	return data.currently_playing_type;
@@ -35,6 +39,7 @@ export function getTrackMessage(
 	template: string,
 	playlistNames: string[] = [],
 	options?: TemplateOptions,
+	album?: AlbumDetail,
 ) {
 	const defaultImageSize = options?.defaultImageSize ?? "";
 	const defaultReleaseDateFormat = options?.defaultReleaseDateFormat ?? "";
@@ -239,11 +244,21 @@ export function getTrackMessage(
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			DEPRECATED,
+			orDeprecated(album?.popularity),
 		)
 		.replace(
-			/{{ album_genres(_array|_hashtag)? }}|{{album_genres(_array|_hashtag)?}}/g,
-			DEPRECATED,
+			/{{ album_genres }}|{{album_genres}}/g,
+			albumGenres(album).join(", ") || DEPRECATED,
+		)
+		.replace(
+			/{{ album_genres_array }}|{{album_genres_array}}/g,
+			albumGenres(album).map((g) => `"${g}"`).join(", ") || DEPRECATED,
+		)
+		.replace(
+			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+			albumGenres(album)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
+				.join(" ") || DEPRECATED,
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,
@@ -313,6 +328,7 @@ export function getRecentlyPlayedTrackMessage(
 	artists: Artist[],
 	template: string,
 	options?: TemplateOptions,
+	album?: AlbumDetail,
 ) {
 	const track = data.track as Track;
 	const defaultImageSize = options?.defaultImageSize ?? "";
@@ -526,11 +542,21 @@ export function getRecentlyPlayedTrackMessage(
 		)
 		.replace(
 			/{{ album_popularity }}|{{album_popularity}}/g,
-			DEPRECATED,
+			orDeprecated(album?.popularity),
 		)
 		.replace(
-			/{{ album_genres(_array|_hashtag)? }}|{{album_genres(_array|_hashtag)?}}/g,
-			DEPRECATED,
+			/{{ album_genres }}|{{album_genres}}/g,
+			albumGenres(album).join(", ") || DEPRECATED,
+		)
+		.replace(
+			/{{ album_genres_array }}|{{album_genres_array}}/g,
+			albumGenres(album).map((g) => `"${g}"`).join(", ") || DEPRECATED,
+		)
+		.replace(
+			/{{ album_genres_hashtag }}|{{album_genres_hashtag}}/g,
+			albumGenres(album)
+				.map((g) => `#${g.replace(/[^\p{L}\p{N}]+/gu, "_").replace(/^_|_$/g, "")}`)
+				.join(" ") || DEPRECATED,
 		)
 		.replace(
 			/{{ artist_image_link }}|{{artist_image_link}}/g,

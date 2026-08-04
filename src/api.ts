@@ -2,6 +2,7 @@ import { Notice, RequestUrlParam, RequestUrlResponse, requestUrl } from "obsidia
 import { SpotifyCall, SpotifyError, describeSpotifyError, parseBody } from "./errors.ts";
 import {
 	AccessTokenResponse,
+	AlbumDetail,
 	Artist,
 	AuthorizationCodeResponse,
 	CurrentlyPlayingTrack,
@@ -297,6 +298,31 @@ export async function getArtist(
 
 	if (!response.json) throw new Error(`No artist found for id "${artistId}".`);
 	return response.json as Artist;
+}
+
+export async function getAlbum(
+	clientId: string,
+	clientSecret: string,
+	albumId: string,
+): Promise<AlbumDetail> {
+	const token = await getAccessToken(clientId, clientSecret);
+	const response = await spotifyRequest(
+		{
+			url: `${SPOTIFY_API_BASE_ADDRESS}/albums/${albumId}`,
+			method: "GET",
+			headers: authHeader(token),
+		},
+		{ fn: "getAlbum" },
+	);
+
+	const json = response.json;
+	if (!json) throw new Error(`No album found for id "${albumId}".`);
+	return {
+		id: json.id,
+		name: json.name,
+		popularity: json.popularity,
+		genres: json.genres ?? [],
+	};
 }
 
 export async function getSpotifyUrl(

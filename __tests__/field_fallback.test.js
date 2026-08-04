@@ -36,6 +36,9 @@ const ARTIST_STRIPPED = {
 const render = (template, artists = [ARTIST_FULL], track = TRACK) =>
 	getTrackMessage(track, artists, template, []);
 
+const renderWithAlbum = (template, album) =>
+	getTrackMessage(TRACK, [ARTIST_FULL], template, [], undefined, album);
+
 test("popularity renders the value when Spotify still returns it", () => {
 	assert.equal(render("{{ popularity }}"), "61");
 	assert.equal(render("{{ track_popularity }}"), "73");
@@ -65,7 +68,7 @@ test("multi-artist output marks only the artists missing data", () => {
 	assert.equal(render("{{ popularity }}", artists), `Artist A: 61, Artist B: ${DEPRECATED}`);
 });
 
-test("album fields Spotify no longer serves are marked", () => {
+test("album fields fall back to the marker when Spotify returns nothing", () => {
 	for (const field of [
 		"{{ album_popularity }}",
 		"{{ album_genres }}",
@@ -75,6 +78,26 @@ test("album fields Spotify no longer serves are marked", () => {
 		assert.equal(render(field), DEPRECATED, `${field} should be marked`);
 		assert.equal(render(field.replace(/ /g, "")), DEPRECATED, `${field} no-space variant`);
 	}
+
+	const empty = { id: "1", name: "Dreams", genres: [] };
+	assert.equal(renderWithAlbum("{{ album_genres }}", empty), DEPRECATED);
+	assert.equal(renderWithAlbum("{{ album_popularity }}", empty), DEPRECATED);
+});
+
+test("album fields render the real value when Spotify does return one", () => {
+	const album = { id: "1", name: "Dreams", popularity: 42, genres: ["indie pop", "dream pop"] };
+
+	assert.equal(renderWithAlbum("{{ album_popularity }}", album), "42");
+	assert.equal(renderWithAlbum("{{ album_genres }}", album), "indie pop, dream pop");
+	assert.equal(
+		renderWithAlbum("{{ album_genres_array }}", album),
+		'"indie pop", "dream pop"',
+	);
+	assert.equal(
+		renderWithAlbum("{{ album_genres_hashtag }}", album),
+		"#indie_pop #dream_pop",
+	);
+	assert.equal(renderWithAlbum("{{ album_popularity }}", { ...album, popularity: 0 }), "0");
 });
 
 test("artist genres are untouched — best effort, empty when unclassified", () => {
